@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class ThreadPoolUpdateRequestMessage extends Message {
+public class ThreadPoolUpdateRequestMessage extends SyncMessage {
     private static final long serialVersionUID = 5136484031973224557L;
 
     /**

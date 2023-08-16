@@ -19,10 +19,7 @@ public class Message implements Serializable {
 
     private static final long serialVersionUID = -60259995547914226L;
 
-    /**
-     * 消息的id  当消息的id不为空的时候 默认为同步请求
-     */
-    private String messageId;
+
 
 
     /**
