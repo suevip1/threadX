@@ -17,4 +17,14 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class ThreadPoolUpdateResponseMessage extends Message {
     private static final long serialVersionUID = 5136484031973224557L;
+
+    /**
+     * 是否修改成功
+     */
+    private boolean success = false;
+
+    /**
+     * 错误信息  只要为false  基本就需要有值
+     */
+    private String errorMessage;
 }
