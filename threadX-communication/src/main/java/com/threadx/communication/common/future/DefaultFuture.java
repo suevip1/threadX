@@ -1,6 +1,8 @@
 package com.threadx.communication.common.future;
 
 import com.threadx.communication.common.agreement.packet.SyncMessage;
+import com.threadx.communication.common.agreement.packet.ThreadPoolUpdateRequestMessage;
+import com.threadx.communication.common.agreement.packet.ThreadPoolUpdateResponseMessage;
 import io.netty.channel.Channel;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
@@ -195,6 +197,5 @@ public class DefaultFuture extends CompletableFuture<Object> implements Serializ
 
     public void doReceived(Object result) {
         complete(result);
-
     }
 }

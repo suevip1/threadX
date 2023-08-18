@@ -1,9 +1,6 @@
 package com.threadx.communication.common.agreement.packet;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 /**
  * 同步消息发送相应器
@@ -13,9 +10,11 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class ThreadPoolUpdateResponseMessage extends SyncMessage {
     private static final long serialVersionUID = 5136484031973224557L;
 
+    public ThreadPoolUpdateResponseMessage(String messageId) {
+        super(messageId);
+    }
 }

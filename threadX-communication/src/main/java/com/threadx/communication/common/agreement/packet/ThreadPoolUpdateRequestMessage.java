@@ -1,9 +1,6 @@
 package com.threadx.communication.common.agreement.packet;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 /**
  * 同步消息请求器
@@ -13,7 +10,6 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class ThreadPoolUpdateRequestMessage extends SyncMessage {
     private static final long serialVersionUID = 5136484031973224557L;
@@ -42,4 +38,8 @@ public class ThreadPoolUpdateRequestMessage extends SyncMessage {
      * 线程池拒绝策略全限定名
      */
     private String rejectedExecutionHandlerClass;
+
+    public ThreadPoolUpdateRequestMessage(String messageId) {
+        super(messageId);
+    }
 }

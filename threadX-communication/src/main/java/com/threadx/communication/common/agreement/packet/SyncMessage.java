@@ -1,9 +1,6 @@
 package com.threadx.communication.common.agreement.packet;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 /**
  * 同步消息
@@ -13,10 +10,14 @@ import lombok.NoArgsConstructor;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class SyncMessage extends Message{
     private static final long serialVersionUID = 2418733157371766241L;
+
+    public SyncMessage(String messageId) {
+        this.messageId = messageId;
+    }
 
     /**
      * 消息的id  当消息的id不为空的时候 默认为同步请求
