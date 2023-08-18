@@ -136,6 +136,7 @@ public class ThreadPoolIndicatorCollection {
         int poolSize = executor.getPoolSize();
         event.setThisThreadCount(poolSize);
         event.setThreadPoolFlow(createFlow);
+        event.setObjectId(threadPoolId);
         return event;
     }
 }

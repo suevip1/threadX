@@ -191,8 +191,6 @@ public class DefaultFuture extends CompletableFuture<Object> implements Serializ
         } else {
             System.err.println("message id is null.");
         }
-
-
     }
 
     public void doReceived(Object result) {

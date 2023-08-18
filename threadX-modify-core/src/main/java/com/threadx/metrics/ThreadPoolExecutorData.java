@@ -102,4 +102,9 @@ public class ThreadPoolExecutorData implements Serializable {
      * 线程池的创建流程
      */
     private String threadPoolFlow;
+
+    /**
+     * 线程池id  objectId
+     */
+    private String objectId;
 }
