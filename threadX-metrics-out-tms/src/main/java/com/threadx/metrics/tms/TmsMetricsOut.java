@@ -58,6 +58,7 @@ public class TmsMetricsOut implements MetricsOutApi {
     public void outThreadPoolMetricsData(ThreadPoolExecutorData metricsData) {
         ThreadPoolCollectMessage threadPoolCollectMessage = new ThreadPoolCollectMessage();
         BeanUtil.copyProperties(metricsData, threadPoolCollectMessage);
+        threadPoolCollectMessage.setThreadPoolObjectId(metricsData.getObjectId());
         ConnectionManager.asyncSendMessageLoad(threadPoolCollectMessage);
     }
 
