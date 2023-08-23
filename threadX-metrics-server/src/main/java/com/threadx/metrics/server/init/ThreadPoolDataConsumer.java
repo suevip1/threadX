@@ -76,7 +76,7 @@ public class ThreadPoolDataConsumer implements InitializingBean, DisposableBean 
                 THREAD_POOL_DATA.drain(consumer, 50);
                 //批量入库
                 if (CollUtil.isNotEmpty(elements)) {
-                    threadPoolDataService.batchSave(elements);
+                    threadPoolDataService.upsertBatchSavePoolData(elements);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

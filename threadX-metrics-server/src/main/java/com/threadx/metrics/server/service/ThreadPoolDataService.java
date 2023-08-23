@@ -4,8 +4,10 @@ import com.threadx.metrics.server.conditions.ThreadPoolDetailConditions;
 import com.threadx.metrics.server.conditions.ThreadPoolPageDataConditions;
 import com.threadx.metrics.server.entity.ThreadPoolData;
 import com.threadx.metrics.server.vo.*;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * *************************************************<br/>
@@ -47,4 +49,11 @@ public interface ThreadPoolDataService {
      * @return 返回线程池的数量
      */
     InstanceStateCountVo findThreadPoolStateCountByInstanceId(Long instanceId);
+
+    /**
+     * 线程池的批量修改活新增
+     *
+     * @param threadPoolDataList 线程池的批量修改或者新增
+     */
+    void upsertBatchSavePoolData(List<ThreadPoolData> threadPoolDataList);
 }

@@ -55,6 +55,9 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
     @Autowired
     private InstanceItemService instanceItemService;
 
+    @Autowired
+    private ThreadPoolDataMapper threadPoolDataMapper;
+
     @Value("${threadx.thread.pool.timeout}")
     private Long threadPoolTimeOut;
 
@@ -208,6 +211,11 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
         instanceStateCountVo.setWaitCount(failure);
         instanceStateCountVo.setActiveCount(activeCount);
         return instanceStateCountVo;
+    }
+
+    @Override
+    public void upsertBatchSavePoolData(List<ThreadPoolData> threadPoolDataList) {
+        threadPoolDataMapper.upsertBatchSavePoolData(threadPoolDataList);
     }
 
     private ThreadPoolDetailsVo buildThreadPoolDetail(ThreadPoolData threadPoolData) {

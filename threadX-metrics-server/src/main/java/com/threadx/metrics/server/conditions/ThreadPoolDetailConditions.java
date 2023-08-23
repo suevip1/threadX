@@ -35,6 +35,12 @@ public class ThreadPoolDetailConditions implements Serializable {
     private Long threadPoolDataId;
 
     /**
+     * 线程池的对象id
+     */
+    @ApiModelProperty(name = "objectId", value = "线程池对象内存的id")
+    private String objectId;
+
+    /**
      * 线程池的名称
      */
     @ApiModelProperty(name = "threadPoolName", value = "线程池的名称")

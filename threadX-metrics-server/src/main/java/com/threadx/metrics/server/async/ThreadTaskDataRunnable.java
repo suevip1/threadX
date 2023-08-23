@@ -39,6 +39,7 @@ public class ThreadTaskDataRunnable implements Runnable {
         threadTaskData.init();
         BeanUtil.copyProperties(threadPoolTaskCollectMessage, threadTaskData);
         threadTaskData.setAddress(ipaddress);
+        threadTaskData.setThreadPoolObjectId(threadPoolTaskCollectMessage.getThreadPoolId());
         ThreadTaskDataConsumer.pushData(threadTaskData);
     }
 }

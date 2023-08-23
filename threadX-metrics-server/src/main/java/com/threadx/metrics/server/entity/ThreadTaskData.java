@@ -29,6 +29,11 @@ public class ThreadTaskData extends BaseEntity {
     private String threadPoolGroupName;
 
     /**
+     * 线程池的Id
+     */
+    private String threadPoolObjectId;
+
+    /**
      * 线程池的名称
      */
     private String threadPoolName;
