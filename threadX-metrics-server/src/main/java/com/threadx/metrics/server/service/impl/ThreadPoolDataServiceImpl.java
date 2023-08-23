@@ -143,6 +143,7 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
                     procedureVos.add(procedureVo);
                 }
                 threadPoolDataVo.setCreateThreadPoolFlow(procedureVos);
+                threadPoolDataVo.setObjectId(record.getThreadPoolObjectId());
                 return threadPoolDataVo;
             }).collect(Collectors.toList());
 
@@ -176,9 +177,14 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
         }else {
             threadPoolData = baseMapper.findByMaxIdAndThreadPoolNameAndInstanceId(threadPoolName, instanceId);
         }
+
+        if(threadPoolData == null) {
+            throw new GeneralException(CurrencyRequestEnum.PARAMETER_MISSING);
+        }
+
         ThreadPoolDetailsVo threadPoolDetailsVo = buildThreadPoolDetail(threadPoolData);
-        ThreadTaskAvgVo avgByInstanceIdAndThreadPoolName = threadTaskDataService.findAvgByInstanceIdAndThreadPoolName(threadPoolName, instanceId);
-        ThreadTaskRateVo rateByInstanceIdAndThreadPoolName = threadTaskDataService.findRateByInstanceIdAndThreadPoolName(threadPoolName, instanceId);
+        ThreadTaskAvgVo avgByInstanceIdAndThreadPoolName = threadTaskDataService.findAvgByInstanceIdAndThreadPoolName(threadPoolData.getThreadPoolName(), threadPoolData.getInstanceId());
+        ThreadTaskRateVo rateByInstanceIdAndThreadPoolName = threadTaskDataService.findRateByInstanceIdAndThreadPoolName(threadPoolData.getThreadPoolName(), threadPoolData.getInstanceId());
         threadPoolDetailsVo.setAverageTimeConsuming(avgByInstanceIdAndThreadPoolName.getAverageTimeConsuming());
         threadPoolDetailsVo.setAverageWaitTimeConsuming(avgByInstanceIdAndThreadPoolName.getAverageWaitTimeConsuming());
         threadPoolDetailsVo.setRefuseRate(rateByInstanceIdAndThreadPoolName.getRefuseRate() + "%");

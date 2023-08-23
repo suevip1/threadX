@@ -106,6 +106,7 @@
                         <el-table-column prop="state" label="线程池状态" align="center"/>
                         <el-table-column fixed="right" label="操作" align="center">
                             <template #default="scope">
+                                <el-button link type="primary" size="small" @click="updateThreadPoolDetails(scope.row.objectId)">修改</el-button>
                                 <el-button link type="primary" size="small" @click="threadPoolDetailsPage(scope.row.instanceId, scope.row.threadPoolName)">详情</el-button>
                                 <el-button link type="primary" size="small" @click="viewThreadPoolCreateFlow(scope.row.createThreadPoolFlow)">流程</el-button>
                             </template>
@@ -146,189 +147,165 @@
     </div>
 </template>
 
-<script lang="ts">
-import { defineComponent,ref,watch,onMounted } from 'vue'
-import { ElTree } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
-import ServerService from '../services/ServerService'
-import InstanceService from '@/services/InstanceService'
-import ThreadPoolService from '@/services/ThreadPoolService'
-import router from '@/router'
 
-export default defineComponent({
-    
-    setup () {
+<script setup lang="ts">
+    import { ref,watch,onMounted } from 'vue'
+    import type { ElTree } from 'element-plus'
+    import { Search } from '@element-plus/icons-vue'
+    import ServerService from '../services/ServerService'
+    import InstanceService from '@/services/InstanceService'
+    import ThreadPoolService from '@/services/ThreadPoolService'
+    import router from '@/router'
 
-        onMounted(() =>{
-            loadRouterParam();
-            loadTreeData();
-        });
-        //分页容量
-        const pageSize = ref(14)
-        const totalSize = ref()
-        const currentPage = ref(1)
-        //是否显示空logo
-        const emLogo = ref(true)
-        //搜索条件
-        const threadPoolGroupNameSearch = ref()
-        //表格数据
-        const threadPoolTableData = ref([])
-        //线程池创建步骤是否显示
-        const createThreadPoolFlowVisible = ref(false)
-        //步骤长度
-        const procedureData = ref()
+    onMounted(() =>{
+        loadRouterParam();
+        loadTreeData();
+    });
+    //分页容量
+    const pageSize = ref(14)
+    const totalSize = ref()
+    const currentPage = ref(1)
+    //是否显示空logo
+    const emLogo = ref(true)
+    //搜索条件
+    const threadPoolGroupNameSearch = ref()
+    //表格数据
+    const threadPoolTableData = ref([])
+    //线程池创建步骤是否显示
+    const createThreadPoolFlowVisible = ref(false)
+    //步骤长度
+    const procedureData = ref()
 
-        const instanceListeningState = ref({
-            monitoringDuration:"0毫秒",
-            threadPoolCount:0,
-            activeThreadPoolCount:0,
-            waitThreadPoolCount:0
-        })
-        // 定义树结构的数据体系
-        const serverTreeData= ref();
-        //点击的实例的id
-        const instanceId = ref()
-        // 定义标签和子标签的属性
-        const defaultProps = ref({
-            children: 'children',
-            label: 'label',
-        });
-        // 定义筛选条件值
-        const treeFilterText = ref()
-        // 定义树引用
-        const treeRef = ref<InstanceType<typeof ElTree>>()
-        // 监听搜索框  将搜索值传入引用对象中
-        watch(treeFilterText, (val) => {
-            filterTreeData()
-        })
+    const instanceListeningState = ref({
+        monitoringDuration:"0毫秒",
+        threadPoolCount:0,
+        activeThreadPoolCount:0,
+        waitThreadPoolCount:0
+    })
+    // 定义树结构的数据体系
+    const serverTreeData= ref();
+    //点击的实例的id
+    const instanceId = ref()
+    // 定义标签和子标签的属性
+    const defaultProps = ref({
+        children: 'children',
+        label: 'label',
+    });
+    // 定义筛选条件值
+    const treeFilterText = ref()
+    // 定义树引用
+    const treeRef = ref<InstanceType<typeof ElTree>>()
+    // 监听搜索框  将搜索值传入引用对象中
+    watch(treeFilterText, (val) => {
+        filterTreeData()
+    })
 
-        /**
-         * 对树节点进行筛选时执行的方法， 返回 false 则表示这个节点会被隐藏
-         * @param value 搜索的值
-         * @param data 当前标签
-         */
-        const filterNode = (value: string, data:any) => {
-            if (!value) return true
-            //是否包含搜索值
-            return data.label.includes(value)
+    /**
+     * 对树节点进行筛选时执行的方法， 返回 false 则表示这个节点会被隐藏
+     * @param value 搜索的值
+     * @param data 当前标签
+     */
+    const filterNode = (value: string, data:any) => {
+        if (!value) return true
+        //是否包含搜索值
+        return data.label.includes(value)
+    }
+
+
+    /**
+     * 当出发节点点击的时候回调的方法
+     * @param data 点击的值
+     */
+    const handleNodeClick = (data: any) => {
+        if (data.parentId != null) {
+            instanceId.value = data.id
+            loadInstanceData()
         }
+        
+    }
 
 
-        /**
-         * 当出发节点点击的时候回调的方法
-         * @param data 点击的值
-         */
-        const handleNodeClick = (data: any) => {
-            if (data.parentId != null) {
-                instanceId.value = data.id
-                loadInstanceData()
-            }
-            
-        }
-
-
-        /**
-         * 加载实例的数据
-         */
-         const loadInstanceData = async ()=>{
-            const instanceIdValue = instanceId.value
-            if (instanceIdValue == null) {
-                emLogo.value = true
-            }else {
-                emLogo.value = false
-                instanceListeningState.value = await InstanceService.instanceListeningState({
-                    instanceId:instanceIdValue
-                })
-                loadThreadPoolData()    
-            }
-        }
-
-        /**
-         * 加载线程池表格数据
-         */
-        const loadThreadPoolData =async () => {
-            const threadPoolTableDataReq = await ThreadPoolService.findPageByThreadPoolPageDataConditions({
-                instanceId: instanceId.value,
-                threadGroupName: threadPoolGroupNameSearch.value,
-                pageNumber: currentPage.value,
-                pageSize: pageSize.value
+    /**
+     * 加载实例的数据
+     */
+        const loadInstanceData = async ()=>{
+        const instanceIdValue = instanceId.value
+        if (instanceIdValue == null) {
+            emLogo.value = true
+        }else {
+            emLogo.value = false
+            instanceListeningState.value = await InstanceService.instanceListeningState({
+                instanceId:instanceIdValue
             })
-            threadPoolTableData.value = threadPoolTableDataReq.data
-            totalSize.value = threadPoolTableDataReq.total
-        }
-
-        /**
-         * 加载路由参数
-         */
-        const loadTreeData = () =>{
-            ServerService.findServerAndInstanceData().then(response =>{
-                serverTreeData.value = response
-            }).finally(() =>{
-                filterTreeData();
-                loadInstanceData();
-            })
-        }
-
-        /**
-         * 根据输入数据过滤数据
-         */
-        const filterTreeData = ()=>{
-            treeRef.value!.filter(treeFilterText.value)
-        }
-
-        /**
-         * 加载路由参数
-         */
-        const loadRouterParam = ()=>{
-            treeFilterText.value = router.currentRoute.value.query.instanceName
-            instanceId.value = router.currentRoute.value.query.instanceId
-        }
-
-        /**
-         * 跳转页面到线程池详情页面，携带线程池的id信息
-         * 
-         * @param threadPoolId 点击的线程池的id
-         */
-         const threadPoolDetailsPage = (instanceId:string, threadPoolName:string)=>{
-            router.push({
-                name:'ThreadPoolMonitor',
-                query: {
-                    instanceId:instanceId,
-                    threadPoolName:threadPoolName
-                }
-            })
-        }
-
-        const viewThreadPoolCreateFlow = (datas:any)=>{
-            procedureData.value = datas
-            createThreadPoolFlowVisible.value = true
-        }
-
-
-        return {
-            serverTreeData,
-            defaultProps,
-            treeFilterText,
-            treeRef,
-            instanceId,
-            emLogo,
-            instanceListeningState,
-            threadPoolGroupNameSearch,
-            threadPoolTableData,
-            pageSize,
-            totalSize,
-            currentPage,
-            createThreadPoolFlowVisible,
-            procedureData,
-            Search,
-            filterNode,
-            handleNodeClick,
-            threadPoolDetailsPage,
-            loadThreadPoolData,
-            viewThreadPoolCreateFlow
+            loadThreadPoolData()    
         }
     }
-})
+
+    /**
+     * 加载线程池表格数据
+     */
+    const loadThreadPoolData =async () => {
+        const threadPoolTableDataReq = await ThreadPoolService.findPageByThreadPoolPageDataConditions({
+            instanceId: instanceId.value,
+            threadGroupName: threadPoolGroupNameSearch.value,
+            pageNumber: currentPage.value,
+            pageSize: pageSize.value
+        })
+        threadPoolTableData.value = threadPoolTableDataReq.data
+        totalSize.value = threadPoolTableDataReq.total
+    }
+
+    /**
+     * 加载路由参数
+     */
+    const loadTreeData = () =>{
+        ServerService.findServerAndInstanceData().then(response =>{
+            serverTreeData.value = response
+        }).finally(() =>{
+            filterTreeData();
+            loadInstanceData();
+        })
+    }
+
+    /**
+     * 根据输入数据过滤数据
+     */
+    const filterTreeData = ()=>{
+        treeRef.value!.filter(treeFilterText.value)
+    }
+
+    /**
+     * 加载路由参数
+     */
+    const loadRouterParam = ()=>{
+        treeFilterText.value = router.currentRoute.value.query.instanceName
+        instanceId.value = router.currentRoute.value.query.instanceId
+    }
+
+    /**
+     * 跳转页面到线程池详情页面，携带线程池的id信息
+     * 
+     * @param threadPoolId 点击的线程池的id
+     */
+        const threadPoolDetailsPage = (instanceId:string, threadPoolName:string)=>{
+        router.push({
+            name:'ThreadPoolMonitor',
+            query: {
+                instanceId:instanceId,
+                threadPoolName:threadPoolName
+            }
+        })
+    }
+
+    const viewThreadPoolCreateFlow = (datas:any)=>{
+        procedureData.value = datas
+        createThreadPoolFlowVisible.value = true
+    }
+
+    const updateThreadPoolDetails = (objectId:string) =>{
+        console.log(objectId)
+    }
+
 </script>
 
 
