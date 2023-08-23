@@ -2,6 +2,7 @@ package com.threadx.metrics.server.service;
 
 import com.threadx.metrics.server.conditions.ThreadPoolDetailConditions;
 import com.threadx.metrics.server.conditions.ThreadPoolPageDataConditions;
+import com.threadx.metrics.server.dto.ThreadPoolVariableParameter;
 import com.threadx.metrics.server.entity.ThreadPoolData;
 import com.threadx.metrics.server.vo.*;
 import org.apache.ibatis.annotations.Param;
@@ -45,6 +46,7 @@ public interface ThreadPoolDataService {
 
     /**
      * 查询线程池状态的数量  根据实例的id
+     *
      * @param instanceId 实例的id
      * @return 返回线程池的数量
      */
@@ -56,4 +58,19 @@ public interface ThreadPoolDataService {
      * @param threadPoolDataList 线程池的批量修改或者新增
      */
     void upsertBatchSavePoolData(List<ThreadPoolData> threadPoolDataList);
+
+    /**
+     * 查询线程池的核心参数
+     *
+     * @param threadPoolDataId 线程池的id
+     * @return 对应线程池的核心参数
+     */
+    ThreadPoolVariableParameter findThreadPoolParam(Long threadPoolDataId);
+
+    /**
+     * 修改线程池参数
+     *
+     * @param threadPoolVariableParameter 线程池参数
+     */
+    void updateThreadPoolParam(ThreadPoolVariableParameter threadPoolVariableParameter);
 }

@@ -4,6 +4,7 @@ import com.threadx.metrics.server.common.annotations.GlobalResultPackage;
 import com.threadx.metrics.server.common.annotations.Login;
 import com.threadx.metrics.server.conditions.ThreadPoolDetailConditions;
 import com.threadx.metrics.server.conditions.ThreadPoolPageDataConditions;
+import com.threadx.metrics.server.dto.ThreadPoolVariableParameter;
 import com.threadx.metrics.server.service.ThreadPoolDataService;
 import com.threadx.metrics.server.vo.ThreadPoolDataVo;
 import com.threadx.metrics.server.vo.ThreadPoolDetailsVo;
@@ -42,7 +43,31 @@ public class ThreadPoolDataController {
     @Login
     @ApiOperation(value = "根据查询条件分页查询线程池")
     @PostMapping("findPageByThreadPoolPageDataConditions")
-    public ThreadxPage<ThreadPoolDataVo> findPageByThreadPoolPageDataConditions(@RequestBody ThreadPoolPageDataConditions threadPoolPageDataConditions){
+    public ThreadxPage<ThreadPoolDataVo> findPageByThreadPoolPageDataConditions(@RequestBody ThreadPoolPageDataConditions threadPoolPageDataConditions) {
         return threadPoolDataService.findPageByThreadPoolPageDataConditions(threadPoolPageDataConditions);
+    }
+
+    /**
+     * 查询线程池的核心参数
+     *
+     * @param threadPoolDataId 线程池的id
+     * @return 对应线程池的核心参数
+     */
+    @Login
+    @ApiOperation(value = "查询线程池的核心参数")
+    @GetMapping("findThreadPoolParam")
+    public ThreadPoolVariableParameter findThreadPoolParam(@RequestParam("threadPoolDataId") Long threadPoolDataId) {
+        return threadPoolDataService.findThreadPoolParam(threadPoolDataId);
+    }
+
+    /**
+     * 修改线程池参数
+     * @param threadPoolVariableParameter 线程池参数
+     */
+    @Login
+    @ApiOperation(value = "根据查询条件分页查询线程池")
+    @PostMapping("updateThreadPoolParam")
+    public void updateThreadPoolParam(@RequestBody ThreadPoolVariableParameter threadPoolVariableParameter) {
+        threadPoolDataService.updateThreadPoolParam(threadPoolVariableParameter);
     }
 }

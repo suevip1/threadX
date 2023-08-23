@@ -33,6 +33,23 @@ class ThreadPoolService {
             return []
         })
     }
+
+   /**
+     * 查询线程池的核心参数
+     *
+     * @param threadPoolDataId 线程池的id
+     * @return 对应线程池的核心参数
+     */
+    public static findThreadPoolParam(threadPoolDataId:string):Promise<any> {
+        return ApiUtils.get('/threadPool/findThreadPoolParam', {
+            threadPoolDataId
+        }).then((response) =>{
+            return response;
+        }).catch(error =>{
+            console.log(error)
+            return {}
+        })
+    }
 }
 
 export default ThreadPoolService

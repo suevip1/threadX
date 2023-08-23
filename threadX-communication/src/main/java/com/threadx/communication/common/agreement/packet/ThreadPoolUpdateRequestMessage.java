@@ -25,14 +25,9 @@ public class ThreadPoolUpdateRequestMessage extends SyncMessage {
     private Integer maximumPoolSize;
 
     /**
-     * 线程池空闲时间  单位纳秒
+     * 线程池空闲时间  单位毫秒
      */
     private Long keepAliveTime;
-
-    /**
-     * 线程池工厂全限定名
-     */
-    private String threadFactoryClass;
 
     /**
      * 线程池拒绝策略全限定名

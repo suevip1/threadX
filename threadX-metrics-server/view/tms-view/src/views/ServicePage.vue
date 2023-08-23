@@ -106,7 +106,7 @@
                         <el-table-column prop="state" label="线程池状态" align="center"/>
                         <el-table-column fixed="right" label="操作" align="center">
                             <template #default="scope">
-                                <el-button link type="primary" size="small" @click="updateThreadPoolDetails(scope.row.objectId)">修改</el-button>
+                                <el-button link type="primary" size="small" @click="showThreadPoolDetails(scope.row.id)">修改</el-button>
                                 <el-button link type="primary" size="small" @click="threadPoolDetailsPage(scope.row.instanceId, scope.row.threadPoolName)">详情</el-button>
                                 <el-button link type="primary" size="small" @click="viewThreadPoolCreateFlow(scope.row.createThreadPoolFlow)">流程</el-button>
                             </template>
@@ -144,23 +144,77 @@
             </div>
         </el-dialog>
 
+        <el-dialog
+            v-model="showUpdateThreadPoolParam"
+            title="修改线程池参数"
+            width="40%"
+            :before-close="emptyThreadPoolParam"
+        >
+            <el-form
+                ref="threadPoolParamFormRef"
+                :model="threadPoolParamForm"
+                :rules="threadPoolParamFormRules"
+                label-width="120px"
+                label-position="right"
+                status-icon
+            >
+                <el-form-item label="核心线程数" prop="coreSize">
+                    <el-input v-model="threadPoolParamForm.coreSize" />
+                </el-form-item>
+
+                <el-form-item label="最大线程数" prop="maximumPoolSize">
+                    <el-input v-model="threadPoolParamForm.maximumPoolSize" />
+                </el-form-item>
+
+                <el-form-item label="空闲时间(毫秒)" prop="keepAliveTime">
+                    <el-input v-model="threadPoolParamForm.keepAliveTime" />
+                </el-form-item>
+
+                <el-form-item label="拒绝策略" prop="rejectedExecutionHandlerClass">
+                    <el-input v-model="threadPoolParamForm.rejectedExecutionHandlerClass" />
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="showUpdateThreadPoolParam = false">取消修改</el-button>
+                    <el-button type="primary" @click="submitThreadPoolparam(threadPoolParamFormRef)">
+                        确认修改
+                    </el-button>
+                </span>
+            </template>
+        </el-dialog>
+
     </div>
 </template>
 
 
 <script setup lang="ts">
-    import { ref,watch,onMounted } from 'vue'
+    import { reactive,ref,watch,onMounted } from 'vue'
     import type { ElTree } from 'element-plus'
     import { Search } from '@element-plus/icons-vue'
     import ServerService from '../services/ServerService'
     import InstanceService from '@/services/InstanceService'
     import ThreadPoolService from '@/services/ThreadPoolService'
     import router from '@/router'
+    import { tr } from 'element-plus/es/locale'
+    import type { FormInstance, FormRules } from 'element-plus'
+    import { ElMessage } from 'element-plus'
+
+
+    interface ThreadPoolParamForm {
+        coreSize: string,
+        maximumPoolSize: string,
+        keepAliveTime: string,
+        rejectedExecutionHandlerClass:string
+    }
 
     onMounted(() =>{
         loadRouterParam();
         loadTreeData();
     });
+
+
+
     //分页容量
     const pageSize = ref(14)
     const totalSize = ref()
@@ -175,6 +229,37 @@
     const createThreadPoolFlowVisible = ref(false)
     //步骤长度
     const procedureData = ref()
+
+    const threadPoolObjectId = ref()
+    const showUpdateThreadPoolParam = ref(false)
+
+
+    const threadPoolParamFormRef = ref<FormInstance>()
+    const threadPoolParamForm = reactive<ThreadPoolParamForm>({
+        coreSize: '',
+        maximumPoolSize: '',
+        keepAliveTime: '',
+        rejectedExecutionHandlerClass:''
+    })
+
+    const threadPoolParamFormRules = reactive<FormRules>({
+        coreSize: [
+            { required: true, message: '当前线程核心数量必填', trigger: 'blur' },
+            { type: 'number', message: '当前线程核心数量必须为数字类型' },
+        ],
+        maximumPoolSize:[
+            { required: true, message: '当前线程最大并行数量必填', trigger: 'blur' },
+            { type: 'number', message: '当前线程最大并行数量必须为数字类型' },
+        ],
+        keepAliveTime:[
+            { required: true, message: '当前线程空闲时间（毫秒）必填', trigger: 'blur' },
+            { type: 'number', message: '当前线程空闲时间必须为数字类型' },
+        ],
+        rejectedExecutionHandlerClass:[
+            { required: true, message: '当前线程拒绝色略全限定名必填', trigger: 'blur' }
+        ]
+    })
+
 
     const instanceListeningState = ref({
         monitoringDuration:"0毫秒",
@@ -287,7 +372,7 @@
      * 
      * @param threadPoolId 点击的线程池的id
      */
-        const threadPoolDetailsPage = (instanceId:string, threadPoolName:string)=>{
+    const threadPoolDetailsPage = (instanceId:string, threadPoolName:string)=>{
         router.push({
             name:'ThreadPoolMonitor',
             query: {
@@ -297,13 +382,58 @@
         })
     }
 
+    /**
+     * 显示线程池的创建流
+     * @param datas 创建流程
+     */
     const viewThreadPoolCreateFlow = (datas:any)=>{
         procedureData.value = datas
         createThreadPoolFlowVisible.value = true
     }
 
-    const updateThreadPoolDetails = (objectId:string) =>{
-        console.log(objectId)
+    /**
+     * 显示修改线程池参数的对话框
+     * @param id 线程池的id
+     */
+    const showThreadPoolDetails = (id:string) =>{
+        emptyThreadPoolParam()
+        //拉取当前的线程池的参数信息
+        ThreadPoolService.findThreadPoolParam(id).then(res =>{
+            threadPoolObjectId.value = res.threadPoolObjectId;
+            threadPoolParamForm.coreSize = res.coreSize;
+            threadPoolParamForm.maximumPoolSize = res.maximumPoolSize;
+            threadPoolParamForm.keepAliveTime = res.keepAliveTime;
+            threadPoolParamForm.rejectedExecutionHandlerClass = res.rejectedExecutionHandlerClass;
+            showUpdateThreadPoolParam.value = true
+        });
+    }
+
+     /**
+      * 清空线程池修改的表单
+      */
+    const emptyThreadPoolParam = () =>{
+        showUpdateThreadPoolParam.value = false
+        threadPoolObjectId.value = "";
+        threadPoolParamForm.coreSize = "";
+        threadPoolParamForm.maximumPoolSize = "";
+        threadPoolParamForm.keepAliveTime = "";
+        threadPoolParamForm.rejectedExecutionHandlerClass = "";
+    }
+
+    const submitThreadPoolparam = async (formEl: FormInstance | undefined) => {
+        if (!formEl) return
+        await formEl.validate((valid, fields) => {
+            if (valid) {
+                console.log(threadPoolParamForm)
+                showUpdateThreadPoolParam.value = false
+                ElMessage({
+                    message: '修改线程参数成功.',
+                    type: 'success',
+                })
+            } else {
+                console.log('error submit!', fields)
+            }
+        })
     }
 
 </script>

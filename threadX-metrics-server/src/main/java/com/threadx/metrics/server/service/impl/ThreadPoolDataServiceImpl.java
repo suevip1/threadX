@@ -13,6 +13,7 @@ import com.threadx.metrics.server.common.exceptions.GeneralException;
 import com.threadx.metrics.server.conditions.ThreadPoolDetailConditions;
 import com.threadx.metrics.server.conditions.ThreadPoolPageDataConditions;
 import com.threadx.metrics.server.constant.RedisCacheKey;
+import com.threadx.metrics.server.dto.ThreadPoolVariableParameter;
 import com.threadx.metrics.server.dto.UserDto;
 import com.threadx.metrics.server.entity.InstanceItem;
 import com.threadx.metrics.server.entity.ThreadPoolData;
@@ -22,6 +23,7 @@ import com.threadx.metrics.server.service.ThreadPoolDataService;
 import com.threadx.metrics.server.service.ThreadTaskDataService;
 import com.threadx.metrics.server.vo.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.jni.Thread;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -222,6 +224,33 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
     @Override
     public void upsertBatchSavePoolData(List<ThreadPoolData> threadPoolDataList) {
         threadPoolDataMapper.upsertBatchSavePoolData(threadPoolDataList);
+    }
+
+    @Override
+    public ThreadPoolVariableParameter findThreadPoolParam(Long threadPoolDataId) {
+        //参数验证
+        if(threadPoolDataId == null) {
+            throw new GeneralException(CurrencyRequestEnum.PARAMETER_MISSING);
+        }
+        //查询线程池
+        QueryWrapper<ThreadPoolData> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("id", threadPoolDataId);
+        ThreadPoolData threadPoolData = baseMapper.selectOne(queryWrapper);
+        if(threadPoolData == null) {
+            throw new GeneralException(CurrencyRequestEnum.PARAMETER_MISSING);
+        }
+        ThreadPoolVariableParameter threadPoolVariableParameter = new ThreadPoolVariableParameter();
+        threadPoolVariableParameter.setThreadPoolObjectId(threadPoolData.getThreadPoolObjectId());
+        threadPoolVariableParameter.setCoreSize(threadPoolData.getCorePoolSize());
+        threadPoolVariableParameter.setMaximumPoolSize(threadPoolData.getMaximumPoolSize());
+        threadPoolVariableParameter.setKeepAliveTime(threadPoolData.getKeepAliveTime());
+        threadPoolVariableParameter.setRejectedExecutionHandlerClass(threadPoolData.getRejectedType());
+        return threadPoolVariableParameter;
+    }
+
+    @Override
+    public void updateThreadPoolParam(ThreadPoolVariableParameter threadPoolVariableParameter) {
+
     }
 
     private ThreadPoolDetailsVo buildThreadPoolDetail(ThreadPoolData threadPoolData) {
