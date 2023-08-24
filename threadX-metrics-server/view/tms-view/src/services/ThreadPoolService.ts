@@ -50,6 +50,10 @@ class ThreadPoolService {
             return {}
         })
     }
+
+    public static updateThreadPoolParam(threadPoolParam:any):Promise<any> {
+        return ApiUtils.post('/threadPool/updateThreadPoolParam', threadPoolParam)
+    }
 }
 
 export default ThreadPoolService

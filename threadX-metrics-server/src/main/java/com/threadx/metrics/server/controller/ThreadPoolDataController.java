@@ -1,5 +1,6 @@
 package com.threadx.metrics.server.controller;
 
+import cn.hutool.json.JSONUtil;
 import com.threadx.metrics.server.common.annotations.GlobalResultPackage;
 import com.threadx.metrics.server.common.annotations.Login;
 import com.threadx.metrics.server.conditions.ThreadPoolDetailConditions;
@@ -65,7 +66,7 @@ public class ThreadPoolDataController {
      * @param threadPoolVariableParameter 线程池参数
      */
     @Login
-    @ApiOperation(value = "根据查询条件分页查询线程池")
+    @ApiOperation(value = "修改线程池的核心参数")
     @PostMapping("updateThreadPoolParam")
     public void updateThreadPoolParam(@RequestBody ThreadPoolVariableParameter threadPoolVariableParameter) {
         threadPoolDataService.updateThreadPoolParam(threadPoolVariableParameter);

@@ -2,12 +2,13 @@ package com.threadx.communication.client.config;
 
 import com.threadx.communication.common.DefaultMessageCommunicationConfig;
 import com.threadx.communication.common.MessageCommunicationConfig;
-import com.threadx.communication.common.load.RoundRobinThreadXLoadHandler;
-import com.threadx.communication.common.load.ThreadXLoadHandler;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 客户端配置
@@ -24,7 +25,10 @@ public class ClientConfig implements Serializable {
      * 启动配置项
      */
     private MessageCommunicationConfig messageCommunicationConfig = new DefaultMessageCommunicationConfig();
-
+    /**
+     * 服务端处理器
+     */
+    private Map<String, ChannelInboundHandlerAdapter> channelInboundHandlerAdapterMap = new ConcurrentHashMap<>();
 
     /**
      * 主机名
@@ -51,5 +55,9 @@ public class ClientConfig implements Serializable {
         this.port = port;
         this.serverKey = serverKey;
         this.instanceKey = instanceKey;
+    }
+
+    public void addHandler(String handlerName, ChannelInboundHandlerAdapter channelInboundHandlerAdapter) {
+        channelInboundHandlerAdapterMap.put(handlerName, channelInboundHandlerAdapter);
     }
 }

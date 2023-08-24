@@ -14,6 +14,7 @@ import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import lombok.EqualsAndHashCode;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -100,7 +101,9 @@ public class CommunicationClient {
                 socketChannel.pipeline().addLast("PacketSegmentationHandler", packetSegmentationHandler);
                 //写入数据编解码器  将一个完整的包数据进行包编解码
                 socketChannel.pipeline().addLast("PacketCodecHandler", new PacketCodecHandler(communicationConfig));
-                //todo 来自服务端的命令处理器
+                Map<String, ChannelInboundHandlerAdapter> channelInboundHandlerAdapterMap = clientConfig.getChannelInboundHandlerAdapterMap();
+                //消息处理器
+                channelInboundHandlerAdapterMap.forEach((handlerName,handler) -> socketChannel.pipeline().addLast(handlerName, handler));
                 //写入心跳实现
                 socketChannel.pipeline().addLast("ClientHeartbeatHandler", new ClientHeartbeatHandler(CommunicationClient.this));
             }

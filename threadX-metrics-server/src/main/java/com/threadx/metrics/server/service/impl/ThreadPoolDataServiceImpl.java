@@ -284,6 +284,7 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
             throw new ThreadPoolException(ThreadPoolExceptionCode.THREAD_POOL_DISCONNECTION);
         }
         ThreadPoolUpdateRequestMessage threadPoolUpdateRequestMessage = new ThreadPoolUpdateRequestMessage(
+                threadPoolData.getThreadPoolObjectId(),
                 threadPoolVariableParameter.getCoreSize(), threadPoolVariableParameter.getMaximumPoolSize(),
                 threadPoolVariableParameter.getKeepAliveTime(), threadPoolVariableParameter.getRejectedExecutionHandlerClass());
         //发送修改请求

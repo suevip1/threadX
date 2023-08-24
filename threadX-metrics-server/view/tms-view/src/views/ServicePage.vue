@@ -202,9 +202,9 @@
 
 
     interface ThreadPoolParamForm {
-        coreSize: string,
-        maximumPoolSize: string,
-        keepAliveTime: string,
+        coreSize: number|null,
+        maximumPoolSize: number|null,
+        keepAliveTime: number|null,
         rejectedExecutionHandlerClass:string
     }
 
@@ -236,24 +236,24 @@
 
     const threadPoolParamFormRef = ref<FormInstance>()
     const threadPoolParamForm = reactive<ThreadPoolParamForm>({
-        coreSize: '',
-        maximumPoolSize: '',
-        keepAliveTime: '',
+        coreSize: null,
+        maximumPoolSize: null,
+        keepAliveTime: null,
         rejectedExecutionHandlerClass:''
     })
 
     const threadPoolParamFormRules = reactive<FormRules>({
         coreSize: [
             { required: true, message: '当前线程核心数量必填', trigger: 'blur' },
-            { type: 'number', message: '当前线程核心数量必须为数字类型' },
+            // { type: 'number', message: '当前线程核心数量必须为数字类型' },
         ],
         maximumPoolSize:[
             { required: true, message: '当前线程最大并行数量必填', trigger: 'blur' },
-            { type: 'number', message: '当前线程最大并行数量必须为数字类型' },
+            // { type: 'number', message: '当前线程最大并行数量必须为数字类型' },
         ],
         keepAliveTime:[
             { required: true, message: '当前线程空闲时间（毫秒）必填', trigger: 'blur' },
-            { type: 'number', message: '当前线程空闲时间必须为数字类型' },
+            // { type: 'number', message: '当前线程空闲时间必须为数字类型' },
         ],
         rejectedExecutionHandlerClass:[
             { required: true, message: '当前线程拒绝色略全限定名必填', trigger: 'blur' }
@@ -414,9 +414,9 @@
     const emptyThreadPoolParam = () =>{
         showUpdateThreadPoolParam.value = false
         threadPooltId.value = "";
-        threadPoolParamForm.coreSize = "";
-        threadPoolParamForm.maximumPoolSize = "";
-        threadPoolParamForm.keepAliveTime = "";
+        threadPoolParamForm.coreSize =  null;
+        threadPoolParamForm.maximumPoolSize = null;
+        threadPoolParamForm.keepAliveTime = null;
         threadPoolParamForm.rejectedExecutionHandlerClass = "";
     }
 
@@ -424,12 +424,25 @@
         if (!formEl) return
         await formEl.validate((valid, fields) => {
             if (valid) {
-                console.log(threadPoolParamForm)
-                showUpdateThreadPoolParam.value = false
-                ElMessage({
-                    message: '修改线程参数成功.',
-                    type: 'success',
+                ThreadPoolService.updateThreadPoolParam({
+                    threadPoolId: threadPooltId.value,
+                    coreSize: threadPoolParamForm.coreSize,
+                    maximumPoolSize: threadPoolParamForm.maximumPoolSize,
+                    keepAliveTime: threadPoolParamForm.keepAliveTime,
+                    rejectedExecutionHandlerClass: threadPoolParamForm.rejectedExecutionHandlerClass
+                }).then(() =>{
+                    showUpdateThreadPoolParam.value = false
+                    ElMessage({
+                        message: '修改线程参数成功.',
+                        type: 'success',
+                    })
+                }).catch(error =>{
+                    ElMessage({
+                        message: '修改线程参数失败.',
+                        type: 'error',
+                    })
                 })
+                
             } else {
                 console.log('error submit!', fields)
             }

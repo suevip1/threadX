@@ -16,9 +16,16 @@ public class ThreadPoolUpdateRequestMessage extends SyncMessage {
     private static final long serialVersionUID = 5136484031973224557L;
 
     /**
+     * 线程池的对象的id
+     */
+    private String objectId;
+
+    /**
      * 线程池核心数量
      */
     private Integer coreSize;
+
+
 
     /**
      * 线程池最大数量
