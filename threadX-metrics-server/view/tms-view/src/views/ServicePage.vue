@@ -230,7 +230,7 @@
     //步骤长度
     const procedureData = ref()
 
-    const threadPoolObjectId = ref()
+    const threadPooltId = ref()
     const showUpdateThreadPoolParam = ref(false)
 
 
@@ -399,7 +399,7 @@
         emptyThreadPoolParam()
         //拉取当前的线程池的参数信息
         ThreadPoolService.findThreadPoolParam(id).then(res =>{
-            threadPoolObjectId.value = res.threadPoolObjectId;
+            threadPooltId.value = res.threadPoolId;
             threadPoolParamForm.coreSize = res.coreSize;
             threadPoolParamForm.maximumPoolSize = res.maximumPoolSize;
             threadPoolParamForm.keepAliveTime = res.keepAliveTime;
@@ -413,7 +413,7 @@
       */
     const emptyThreadPoolParam = () =>{
         showUpdateThreadPoolParam.value = false
-        threadPoolObjectId.value = "";
+        threadPooltId.value = "";
         threadPoolParamForm.coreSize = "";
         threadPoolParamForm.maximumPoolSize = "";
         threadPoolParamForm.keepAliveTime = "";

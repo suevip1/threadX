@@ -9,6 +9,7 @@ import lombok.*;
  * @date 2023/8/10 16:48
  */
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class ThreadPoolUpdateRequestMessage extends SyncMessage {
@@ -33,8 +34,4 @@ public class ThreadPoolUpdateRequestMessage extends SyncMessage {
      * 线程池拒绝策略全限定名
      */
     private String rejectedExecutionHandlerClass;
-
-    public ThreadPoolUpdateRequestMessage(String messageId) {
-        super(messageId);
-    }
 }

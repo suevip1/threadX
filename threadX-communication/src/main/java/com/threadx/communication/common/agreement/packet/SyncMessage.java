@@ -2,6 +2,8 @@ package com.threadx.communication.common.agreement.packet;
 
 import lombok.*;
 
+import java.util.UUID;
+
 /**
  * 同步消息
  *
@@ -10,13 +12,11 @@ import lombok.*;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class SyncMessage extends Message{
     private static final long serialVersionUID = 2418733157371766241L;
 
-    public SyncMessage(String messageId) {
-        this.messageId = messageId;
+    public SyncMessage() {
+        this.messageId = UUID.randomUUID().toString().replace("-","");
     }
 
     /**

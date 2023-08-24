@@ -73,4 +73,15 @@ public interface ThreadPoolDataService {
      * @param threadPoolVariableParameter 线程池参数
      */
     void updateThreadPoolParam(ThreadPoolVariableParameter threadPoolVariableParameter);
+
+
+    /**
+     * 监测线程池是否处于活跃状态   true活跃  false  断连
+     *
+     * @param serverName     服务名称
+     * @param instanceName   实例名称
+     * @param threadPoolName 线程池的名称
+     * @return 实例活跃检查
+     */
+    boolean threadPoolActiveCheck(String serverName, String instanceName, String threadPoolName);
 }

@@ -130,7 +130,6 @@
             thread_pool_flow = VALUES(thread_pool_flow),
             keep_alive_time = VALUES(keep_alive_time),
             instance_id = VALUES(instance_id),
-            create_time = VALUES(create_time),
             update_time = VALUES(update_time)
     </insert>
 

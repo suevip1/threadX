@@ -7,9 +7,15 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.threadx.communication.common.agreement.packet.SyncMessage;
+import com.threadx.communication.common.agreement.packet.ThreadPoolUpdateRequestMessage;
+import com.threadx.communication.server.ServerSendMessage;
+import com.threadx.communication.server.cache.ConnectionCache;
 import com.threadx.metrics.server.common.code.CurrencyRequestEnum;
+import com.threadx.metrics.server.common.code.ThreadPoolExceptionCode;
 import com.threadx.metrics.server.common.context.LoginContext;
 import com.threadx.metrics.server.common.exceptions.GeneralException;
+import com.threadx.metrics.server.common.exceptions.ThreadPoolException;
 import com.threadx.metrics.server.conditions.ThreadPoolDetailConditions;
 import com.threadx.metrics.server.conditions.ThreadPoolPageDataConditions;
 import com.threadx.metrics.server.constant.RedisCacheKey;
@@ -22,6 +28,7 @@ import com.threadx.metrics.server.service.InstanceItemService;
 import com.threadx.metrics.server.service.ThreadPoolDataService;
 import com.threadx.metrics.server.service.ThreadTaskDataService;
 import com.threadx.metrics.server.vo.*;
+import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.jni.Thread;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -237,10 +244,10 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
         queryWrapper.eq("id", threadPoolDataId);
         ThreadPoolData threadPoolData = baseMapper.selectOne(queryWrapper);
         if(threadPoolData == null) {
-            throw new GeneralException(CurrencyRequestEnum.PARAMETER_MISSING);
+            throw new ThreadPoolException(ThreadPoolExceptionCode.NOT_EXIST_THREAD_POOL_DATA);
         }
         ThreadPoolVariableParameter threadPoolVariableParameter = new ThreadPoolVariableParameter();
-        threadPoolVariableParameter.setThreadPoolObjectId(threadPoolData.getThreadPoolObjectId());
+        threadPoolVariableParameter.setThreadPoolId(threadPoolData.getId());
         threadPoolVariableParameter.setCoreSize(threadPoolData.getCorePoolSize());
         threadPoolVariableParameter.setMaximumPoolSize(threadPoolData.getMaximumPoolSize());
         threadPoolVariableParameter.setKeepAliveTime(threadPoolData.getKeepAliveTime());
@@ -250,7 +257,46 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
 
     @Override
     public void updateThreadPoolParam(ThreadPoolVariableParameter threadPoolVariableParameter) {
+        if(threadPoolVariableParameter == null) {
+            throw new GeneralException(CurrencyRequestEnum.PARAMETER_MISSING);
+        }
+        Long threadPoolId = threadPoolVariableParameter.getThreadPoolId();
+        if(threadPoolId == null) {
+            throw new GeneralException(CurrencyRequestEnum.PARAMETER_MISSING);
+        }
+        //查询对应的线程池
+        ThreadPoolData threadPoolData = baseMapper.selectById(threadPoolId);
+        if(threadPoolData == null) {
+            throw new ThreadPoolException(ThreadPoolExceptionCode.NOT_EXIST_THREAD_POOL_DATA);
+        }
+        //初步判断线程池是否存活
+        String serverKey = threadPoolData.getServerKey();
+        String instanceKey = threadPoolData.getInstanceKey();
+        String threadPoolName = threadPoolData.getThreadPoolName();
+        //实例是否存活
+        if (threadPoolActiveCheck(serverKey, instanceKey, threadPoolName)) {
+            throw new ThreadPoolException(ThreadPoolExceptionCode.THREAD_POOL_DISCONNECTION);
+        }
+        //获取线程池的采集节点地址
+        String address = threadPoolData.getAddress();
+        //验证是否存活
+        if(!ConnectionCache.isActive(address)) {
+            throw new ThreadPoolException(ThreadPoolExceptionCode.THREAD_POOL_DISCONNECTION);
+        }
+        ThreadPoolUpdateRequestMessage threadPoolUpdateRequestMessage = new ThreadPoolUpdateRequestMessage(
+                threadPoolVariableParameter.getCoreSize(), threadPoolVariableParameter.getMaximumPoolSize(),
+                threadPoolVariableParameter.getKeepAliveTime(), threadPoolVariableParameter.getRejectedExecutionHandlerClass());
+        //发送修改请求
+        SyncMessage syncMessage = ServerSendMessage.syncSendMessage(address, threadPoolUpdateRequestMessage);
+        if(!syncMessage.isSuccess()) {
+            throw new GeneralException(syncMessage.getErrorMessage());
+        }
+    }
 
+    @Override
+    public boolean threadPoolActiveCheck(String serverName, String instanceName, String threadPoolName) {
+        Boolean hasKey = redisTemplate.hasKey(String.format(RedisCacheKey.THREAD_ACTIVE_CACHE, serverName, instanceName, threadPoolName));
+        return hasKey != null && hasKey;
     }
 
     private ThreadPoolDetailsVo buildThreadPoolDetail(ThreadPoolData threadPoolData) {

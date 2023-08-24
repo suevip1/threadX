@@ -85,9 +85,11 @@ public class ThreadPoolDataConsumer implements InitializingBean, DisposableBean 
     }
 
     public static void pushData(ThreadPoolData threadPoolData) {
-        StringRedisTemplate redisTemplate = SpringUtil.getBean(StringRedisTemplate.class);
-        redisTemplate.opsForValue().set(String.format(RedisCacheKey.INSTANCE_ACTIVE_CACHE, threadPoolData.getServerKey(), threadPoolData.getInstanceKey()), "活跃", 30, TimeUnit.SECONDS);
         if (IS_START.get()) {
+            StringRedisTemplate redisTemplate = SpringUtil.getBean(StringRedisTemplate.class);
+            redisTemplate.opsForValue().set(String.format(RedisCacheKey.INSTANCE_ACTIVE_CACHE, threadPoolData.getServerKey(), threadPoolData.getInstanceKey()), "活跃", 30, TimeUnit.SECONDS);
+            redisTemplate.opsForValue().set(String.format(RedisCacheKey.THREAD_ACTIVE_CACHE, threadPoolData.getServerKey(), threadPoolData.getInstanceKey(), threadPoolData.getThreadPoolName()), "活跃", 30, TimeUnit.SECONDS);
+
             //验证是否存在变化
             if(comparedWithLastTime(threadPoolData)) {
                 return;

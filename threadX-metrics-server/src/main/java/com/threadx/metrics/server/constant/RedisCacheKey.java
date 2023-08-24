@@ -59,7 +59,12 @@ public interface RedisCacheKey {
     /**
      * 存活实例的id 服务名称:  实例名称
      */
-    String INSTANCE_ACTIVE_CACHE = THREADX_CADCHE + "instance:active:%s-%s";
+    String INSTANCE_ACTIVE_CACHE = THREADX_CADCHE + "instance:active:%s:%s:status";
+
+    /**
+     * 存活线程池的id 服务名称:  实例名称  线程池名称
+     */
+    String THREAD_ACTIVE_CACHE = THREADX_CADCHE + "instance:active:%s:%s:%s:status";
 
     /**
      * 服务id缓存主键， 占位符为 服务名称

@@ -19,9 +19,9 @@ public class ThreadPoolVariableParameter implements Serializable {
     private static final long serialVersionUID = -5734601191342543479L;
 
     /**
-     * 线程池对象的id
+     * 线程池的id
      */
-    private String threadPoolObjectId;
+    private Long threadPoolId;
 
     /**
      * 线程池核心数量
