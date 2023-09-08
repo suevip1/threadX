@@ -37,22 +37,23 @@ public class ThreadPoolParamUpdateHandler extends ThreadXChannelInboundHandler<T
 
     }
 
-    private void updateThreadPool(ChannelHandlerContext ctx, ThreadPoolUpdateRequestMessage msg) {
+    private void updateThreadPool(ChannelHandlerContext ctx, ThreadPoolUpdateRequestMessage requestMessage) {
         UpdateThreadPoolCall updateThreadPoolCall = AgentContext.getUpdateThreadPoolCall();
         ThreadPoolParam param = new ThreadPoolParam();
-        param.setObjectId(msg.getObjectId());
-        param.setCoreSize(msg.getCoreSize());
-        param.setMaximumPoolSize(msg.getMaximumPoolSize());
-        param.setKeepAliveTime(msg.getKeepAliveTime());
-        param.setRejectedExecutionHandlerClass(msg.getRejectedExecutionHandlerClass());
+        param.setObjectId(requestMessage.getObjectId());
+        param.setCoreSize(requestMessage.getCoreSize());
+        param.setMaximumPoolSize(requestMessage.getMaximumPoolSize());
+        param.setKeepAliveTime(requestMessage.getKeepAliveTime());
+        param.setRejectedExecutionHandlerClass(requestMessage.getRejectedExecutionHandlerClass());
         ThreadPoolUpdateResponseMessage responseMessage = new ThreadPoolUpdateResponseMessage();
         try {
             updateThreadPoolCall.modify(param);
             responseMessage.setSuccess(true);
         }catch (Exception e) {
             responseMessage.setSuccess(false);
-            responseMessage.setErrorMessage("修改线程池失败！");
+            responseMessage.setErrorMessage("修改线程池失败:" + e.getMessage());
         }finally {
+            responseMessage.setMessageId(requestMessage.getMessageId());
             ctx.channel().writeAndFlush(responseMessage);
         }
 

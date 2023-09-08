@@ -27,14 +27,6 @@ public class EventUpdateThreadPoolCall implements UpdateThreadPoolCall{
             throw new RuntimeException("线程池不存在或者已经被jvm回收.");
         }
 
-        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        if(contextClassLoader != null) {
-            System.out.println(contextClassLoader.getClass().getName());
-        }else {
-            System.out.println("bootstreap的类加载器");
-        }
-
-
         Integer maximumPoolSize = threadPoolParam.getMaximumPoolSize();
         Integer coreSize = threadPoolParam.getCoreSize();
         String rejectedExecutionHandlerClass = threadPoolParam.getRejectedExecutionHandlerClass();
@@ -50,16 +42,12 @@ public class EventUpdateThreadPoolCall implements UpdateThreadPoolCall{
         }
 
 
-        if(keepAliveTime == null){
+        if(keepAliveTime == null || keepAliveTime <= 0){
             keepAliveTime = threadPoolExecutor.getKeepAliveTime(TimeUnit.MILLISECONDS);
         }
 
         if(coreSize > maximumPoolSize) {
             throw new RuntimeException("线程池参数不合法【coreSize > maximumPoolSize】.");
-        }
-
-        if(keepAliveTime <= 0) {
-            throw new RuntimeException("线程池参数不合法【keepAliveTime <= 0】.");
         }
 
         if(rejectedExecutionHandlerClass != null && !"".equals(rejectedExecutionHandlerClass)) {

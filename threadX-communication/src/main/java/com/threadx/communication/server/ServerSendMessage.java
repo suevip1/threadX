@@ -27,6 +27,7 @@ public class ServerSendMessage {
             throw new RuntimeException(String.format("The client【%s】 connection is not active.", address));
         }
         Channel channel = connection.channel();
+        channel.writeAndFlush(syncMessage);
         DefaultFuture defaultFuture = DefaultFuture.newDefaultFuture(syncMessage, channel, 30);
         try {
             Object resultObject = defaultFuture.get();

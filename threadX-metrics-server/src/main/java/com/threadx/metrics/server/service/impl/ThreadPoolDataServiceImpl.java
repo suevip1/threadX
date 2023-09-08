@@ -137,7 +137,12 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
                     threadPoolDataVo.setActiveCount(0);
                     threadPoolDataVo.setThisThreadCount(0);
                 }else {
-                    threadPoolDataVo.setState(activeCount > 0 ? ThreadPoolDataVo.ACTION_NAME : ThreadPoolDataVo.IDEA_NAME);
+                    boolean threadPoolActive = threadPoolActiveCheck(record.getServerKey(), record.getInstanceKey(), record.getThreadPoolName());
+                    if(threadPoolActive) {
+                        threadPoolDataVo.setState(activeCount > 0 ? ThreadPoolDataVo.ACTION_NAME : ThreadPoolDataVo.IDEA_NAME);
+                    }else {
+                        threadPoolDataVo.setState(ThreadPoolDataVo.DISCONNECTION);
+                    }
                 }
 
                 List<ProcedureVo> procedureVos = new ArrayList<>();
@@ -274,7 +279,7 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
         String instanceKey = threadPoolData.getInstanceKey();
         String threadPoolName = threadPoolData.getThreadPoolName();
         //实例是否存活
-        if (threadPoolActiveCheck(serverKey, instanceKey, threadPoolName)) {
+        if (!threadPoolActiveCheck(serverKey, instanceKey, threadPoolName)) {
             throw new ThreadPoolException(ThreadPoolExceptionCode.THREAD_POOL_DISCONNECTION);
         }
         //获取线程池的采集节点地址
