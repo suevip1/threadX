@@ -92,7 +92,7 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
         datas.forEach(data -> {
             String paramData = data.getParamData();
             if (StrUtil.isNotBlank(paramData)) {
-                paramData = paramData.substring(paramData.indexOf("=>")+2, paramData.length());
+                paramData = paramData.substring(paramData.indexOf("=>") + 2, paramData.length());
 
                 ThreadPoolVariableParameter threadPoolVariableParameter = JSONUtil.toBean(paramData, ThreadPoolVariableParameter.class);
                 //保存用户信息
@@ -271,10 +271,11 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
         ThreadPoolDetailsVo threadPoolDetailsVo = buildThreadPoolDetail(threadPoolData);
         ThreadTaskAvgVo avgByInstanceIdAndThreadPoolName = threadTaskDataService.findAvgByInstanceIdAndThreadPoolName(threadPoolData.getThreadPoolName(), threadPoolData.getInstanceId());
         ThreadTaskRateVo rateByInstanceIdAndThreadPoolName = threadTaskDataService.findRateByInstanceIdAndThreadPoolName(threadPoolData.getThreadPoolName(), threadPoolData.getInstanceId());
-        threadPoolDetailsVo.setAverageTimeConsuming(avgByInstanceIdAndThreadPoolName.getAverageTimeConsuming());
-        threadPoolDetailsVo.setAverageWaitTimeConsuming(avgByInstanceIdAndThreadPoolName.getAverageWaitTimeConsuming());
-        threadPoolDetailsVo.setRefuseRate(rateByInstanceIdAndThreadPoolName.getRefuseRate() + "%");
-        threadPoolDetailsVo.setSuccessRate(rateByInstanceIdAndThreadPoolName.getSuccessRate() + "%");
+
+        threadPoolDetailsVo.setAverageTimeConsuming(avgByInstanceIdAndThreadPoolName == null ? "0" : avgByInstanceIdAndThreadPoolName.getAverageTimeConsuming());
+        threadPoolDetailsVo.setAverageWaitTimeConsuming(avgByInstanceIdAndThreadPoolName == null ? "0" : avgByInstanceIdAndThreadPoolName.getAverageWaitTimeConsuming());
+        threadPoolDetailsVo.setRefuseRate(rateByInstanceIdAndThreadPoolName == null ? "0%" : rateByInstanceIdAndThreadPoolName.getRefuseRate() + "%");
+        threadPoolDetailsVo.setSuccessRate(rateByInstanceIdAndThreadPoolName == null ? "100%" : rateByInstanceIdAndThreadPoolName.getSuccessRate() + "%");
 
 
         //对查看的数据进行计数
