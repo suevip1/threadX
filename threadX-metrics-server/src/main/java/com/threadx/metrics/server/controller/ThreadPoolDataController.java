@@ -8,6 +8,7 @@ import com.threadx.metrics.server.common.annotations.UserPermission;
 import com.threadx.metrics.server.conditions.ThreadPoolDetailConditions;
 import com.threadx.metrics.server.conditions.ThreadPoolPageDataConditions;
 import com.threadx.metrics.server.dto.ThreadPoolVariableParameter;
+import com.threadx.metrics.server.entity.ThreadPoolUpdateLog;
 import com.threadx.metrics.server.enums.LogEnum;
 import com.threadx.metrics.server.enums.PermissionValue;
 import com.threadx.metrics.server.service.ThreadPoolDataService;
@@ -17,6 +18,8 @@ import com.threadx.metrics.server.vo.ThreadxPage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * *************************************************<br/>
@@ -67,6 +70,7 @@ public class ThreadPoolDataController {
 
     /**
      * 修改线程池参数
+     *
      * @param threadPoolVariableParameter 线程池参数
      */
     @Login
@@ -76,5 +80,17 @@ public class ThreadPoolDataController {
     @Log(value = LogEnum.UPDATE_THREAD_PARAM)
     public void updateThreadPoolParam(@RequestBody ThreadPoolVariableParameter threadPoolVariableParameter) {
         threadPoolDataService.updateThreadPoolParam(threadPoolVariableParameter);
+    }
+
+    /**
+     * 查找线程池的修改日志
+     *
+     * @return 线程池的修改日志
+     */
+    @Login
+    @ApiOperation(value = "查找线程池的修改日志")
+    @GetMapping("findThreadPoolUpdateLog")
+    public List<ThreadPoolUpdateLog> findThreadPoolUpdateLog() {
+        return threadPoolDataService.findThreadPoolUpdateLog(10);
     }
 }

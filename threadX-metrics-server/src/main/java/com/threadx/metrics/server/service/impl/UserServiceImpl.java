@@ -28,6 +28,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +56,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         this.userRoleService = userRoleService;
         this.menuService = menuService;
         this.permissionService = permissionService;
+    }
+
+    @Override
+    public List<User> findUserByIds(Collection<Long> userIds) {
+        if(CollUtil.isEmpty(userIds)) {
+            return new ArrayList<>();
+        }
+        return baseMapper.selectBatchIds(userIds);
     }
 
     @Override

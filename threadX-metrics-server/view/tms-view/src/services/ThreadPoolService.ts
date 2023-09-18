@@ -51,8 +51,20 @@ class ThreadPoolService {
         })
     }
 
+    /**
+     * 修改线程池参数
+     * @param threadPoolParam 线程池参数
+     */
     public static updateThreadPoolParam(threadPoolParam:any):Promise<any> {
         return ApiUtils.post('/threadPool/updateThreadPoolParam', threadPoolParam)
+    }
+
+    /**
+     * 查找线程池的修改日志
+     * @returns 修改日志
+     */
+    public static findThreadPoolUpdateLog():Promise<any> {
+        return ApiUtils.get('/threadPool/findThreadPoolUpdateLog');
     }
 }
 

@@ -103,7 +103,7 @@ public class LogAspect {
             Object arg = args[i];
             Class<?> paramType = parameterTypes[i];
             // 将参数信息转换为字符串
-            String argString = paramType.getSimpleName() + ": " + paramToString(arg, paramType, paramReplaces);
+            String argString = paramType.getSimpleName() + "=>" + paramToString(arg, paramType, paramReplaces);
             paramInfo.append(argString).append("\n");
         }
         activeLog.setParamData(paramInfo.toString());

@@ -4,6 +4,7 @@ import com.threadx.metrics.server.conditions.ThreadPoolDetailConditions;
 import com.threadx.metrics.server.conditions.ThreadPoolPageDataConditions;
 import com.threadx.metrics.server.dto.ThreadPoolVariableParameter;
 import com.threadx.metrics.server.entity.ThreadPoolData;
+import com.threadx.metrics.server.entity.ThreadPoolUpdateLog;
 import com.threadx.metrics.server.vo.*;
 import org.apache.ibatis.annotations.Param;
 
@@ -19,6 +20,22 @@ import java.util.List;
  * @date 2023/4/23 15:09
  */
 public interface ThreadPoolDataService {
+
+    /**
+     * 查找线程池的修改日志
+     *
+     * @param latelyCount 查询最近几次的
+     * @return 最近修改的信息
+     */
+    List<ThreadPoolUpdateLog> findThreadPoolUpdateLog(int latelyCount);
+
+    /**
+     * 查询线程池数据  根据ids
+     *
+     * @param ids id集合
+     * @return 线程池的数据
+     */
+    List<ThreadPoolData> findThreadPoolDataByIds(Collection<Long> ids);
 
     /**
      * 批量保存

@@ -1,7 +1,9 @@
 package com.threadx.metrics.server.service;
 
 
+import com.threadx.metrics.server.conditions.LogFindConditions;
 import com.threadx.metrics.server.entity.ActiveLog;
+import com.threadx.metrics.server.vo.ThreadxPage;
 
 import java.util.List;
 
@@ -14,6 +16,13 @@ import java.util.List;
  * @date 2023/6/3 23:06
  */
 public interface ActiveLogService {
+
+    /**
+     * 查询日志根据活动的key
+     * @param logFindConditions 查询条件
+     * @return 对应的日志信息
+     */
+    ThreadxPage<ActiveLog> findActiveLogByLogFindConditions(LogFindConditions logFindConditions);
 
     /**
      * 保存日志
@@ -31,6 +40,7 @@ public interface ActiveLogService {
 
     /**
      * 根据用户的id删除操作id
+     *
      * @param userId 用户的id
      */
     void deleteLogByUserId(Long userId);

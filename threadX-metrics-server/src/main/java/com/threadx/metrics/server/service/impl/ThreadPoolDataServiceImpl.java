@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -16,17 +17,17 @@ import com.threadx.metrics.server.common.code.ThreadPoolExceptionCode;
 import com.threadx.metrics.server.common.context.LoginContext;
 import com.threadx.metrics.server.common.exceptions.GeneralException;
 import com.threadx.metrics.server.common.exceptions.ThreadPoolException;
+import com.threadx.metrics.server.conditions.LogFindConditions;
 import com.threadx.metrics.server.conditions.ThreadPoolDetailConditions;
 import com.threadx.metrics.server.conditions.ThreadPoolPageDataConditions;
+import com.threadx.metrics.server.constant.LogConstant;
 import com.threadx.metrics.server.constant.RedisCacheKey;
 import com.threadx.metrics.server.dto.ThreadPoolVariableParameter;
 import com.threadx.metrics.server.dto.UserDto;
-import com.threadx.metrics.server.entity.InstanceItem;
-import com.threadx.metrics.server.entity.ThreadPoolData;
+import com.threadx.metrics.server.entity.*;
+import com.threadx.metrics.server.enums.LogEnum;
 import com.threadx.metrics.server.mapper.ThreadPoolDataMapper;
-import com.threadx.metrics.server.service.InstanceItemService;
-import com.threadx.metrics.server.service.ThreadPoolDataService;
-import com.threadx.metrics.server.service.ThreadTaskDataService;
+import com.threadx.metrics.server.service.*;
 import com.threadx.metrics.server.vo.*;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
@@ -37,10 +38,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -67,11 +66,84 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
     @Autowired
     private ThreadPoolDataMapper threadPoolDataMapper;
 
+    @Autowired
+    private ActiveLogService activeLogService;
+
+    @Autowired
+    private UserService userService;
+
     @Value("${threadx.thread.pool.timeout}")
     private Long threadPoolTimeOut;
 
     @Autowired
     private StringRedisTemplate redisTemplate;
+
+    @Override
+    public List<ThreadPoolUpdateLog> findThreadPoolUpdateLog(int latelyCount) {
+        LogFindConditions logFindConditions = new LogFindConditions();
+        logFindConditions.setActiveKey(LogEnum.UPDATE_THREAD_PARAM.getActiveKey());
+        logFindConditions.setPageSize(latelyCount);
+        logFindConditions.setPageNumber(1);
+        ThreadxPage<ActiveLog> activeLogByLogFindConditions = activeLogService.findActiveLogByLogFindConditions(logFindConditions);
+        List<ActiveLog> datas = activeLogByLogFindConditions.getData();
+        Set<Long> userIds = new HashSet<>();
+        Set<Long> threadPoolIds = new HashSet<>();
+        Map<Long, ThreadPoolVariableParameter> paramMapping = new HashMap<>();
+        datas.forEach(data -> {
+            String paramData = data.getParamData();
+            if (StrUtil.isNotBlank(paramData)) {
+                paramData = paramData.substring(paramData.indexOf("=>")+2, paramData.length());
+
+                ThreadPoolVariableParameter threadPoolVariableParameter = JSONUtil.toBean(paramData, ThreadPoolVariableParameter.class);
+                //保存用户信息
+                userIds.add(data.getUserId());
+                //保存线程池信息
+                threadPoolIds.add(threadPoolVariableParameter.getThreadPoolId());
+                //保存参数信息
+                paramMapping.put(data.getId(), threadPoolVariableParameter);
+            }
+        });
+        //获取所有的用户信息
+        List<User> userByIds = userService.findUserByIds(userIds);
+        //获取所有的线程池信息
+        List<ThreadPoolData> threadPoolDataByIds = this.findThreadPoolDataByIds(threadPoolIds);
+        //转换为map
+        Map<Long, String> userIdNameMaping = new HashMap<>(userByIds.size());
+        Map<Long, ThreadPoolData> threadPoolDataMaping = new HashMap<>(userByIds.size());
+        //映射为  用户id  和   用户名称
+        userByIds.forEach(user -> userIdNameMaping.put(user.getId(), user.getNickName()));
+        //映射为  线程池id  和 线程池信息
+        threadPoolDataByIds.forEach(threadPoolData -> threadPoolDataMaping.put(threadPoolData.getId(), threadPoolData));
+
+        //开始转换数据
+        return datas.stream().map(data -> {
+            ThreadPoolUpdateLog threadPoolUpdateLog = new ThreadPoolUpdateLog();
+            threadPoolUpdateLog.setUpdateNickName(userIdNameMaping.getOrDefault(data.getUserId(), "未知用户"));
+            //获取参数信息
+            ThreadPoolVariableParameter threadPoolVariableParameter = paramMapping.get(data.getId());
+            //获取线程数据
+            Long threadPoolId = threadPoolVariableParameter.getThreadPoolId();
+            ThreadPoolData threadPoolData = threadPoolDataMaping.get(threadPoolId);
+            threadPoolUpdateLog.setThreadPoolId(threadPoolId);
+            threadPoolUpdateLog.setThreadPoolName(threadPoolData.getThreadPoolName());
+            threadPoolUpdateLog.setServerName(threadPoolData.getServerKey());
+            threadPoolUpdateLog.setInstanceName(threadPoolData.getInstanceKey());
+            threadPoolUpdateLog.setUpdateDate(DateUtil.format(new Date(data.getCreateTime()), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            threadPoolUpdateLog.setInstanceId(threadPoolData.getInstanceId());
+            threadPoolUpdateLog.formatUpdateDetails(threadPoolVariableParameter);
+            String resultState = data.getResultState();
+            threadPoolUpdateLog.setResultMessage(LogConstant.ERROR.equals(resultState) ? "失败" : "成功");
+            return threadPoolUpdateLog;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ThreadPoolData> findThreadPoolDataByIds(Collection<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return new ArrayList<>();
+        }
+        return baseMapper.selectBatchIds(ids);
+    }
 
     @Override
     public void batchSave(Collection<ThreadPoolData> collection) {
@@ -90,7 +162,7 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
         }
 
         InstanceItem instanceItem = instanceItemService.findById(instanceId);
-        if(instanceItem == null) {
+        if (instanceItem == null) {
             log.error("No queried is instance data, instanceId = {}", instanceId);
             throw new GeneralException(CurrencyRequestEnum.DATA_EXCEPTION);
         }
@@ -113,7 +185,7 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
 
         List<ThreadPoolData> threadPoolDataIds = baseMapper.selectList(queryThreadPoolId);
         List<Long> threadPoolDataIdList = threadPoolDataIds.stream().map(ThreadPoolData::getId).collect(Collectors.toList());
-        if(CollUtil.isNotEmpty(threadPoolDataIdList)) {
+        if (CollUtil.isNotEmpty(threadPoolDataIdList)) {
             QueryWrapper<ThreadPoolData> queryWrapper = new QueryWrapper<>();
             queryWrapper.in("id", threadPoolDataIdList);
 
@@ -132,15 +204,15 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
                 Integer activeCount = record.getActiveCount();
                 threadPoolDataVo.setCreateTime(DateUtil.format(new Date(record.getCreateTime()), "yyyy-MM-dd HH:mm:ss"));
                 threadPoolDataVo.setInstanceId(record.getInstanceId());
-                if(!isActive) {
+                if (!isActive) {
                     threadPoolDataVo.setState(ThreadPoolDataVo.DISCONNECTION);
                     threadPoolDataVo.setActiveCount(0);
                     threadPoolDataVo.setThisThreadCount(0);
-                }else {
+                } else {
                     boolean threadPoolActive = threadPoolActiveCheck(record.getServerKey(), record.getInstanceKey(), record.getThreadPoolName());
-                    if(threadPoolActive) {
+                    if (threadPoolActive) {
                         threadPoolDataVo.setState(activeCount > 0 ? ThreadPoolDataVo.ACTION_NAME : ThreadPoolDataVo.IDEA_NAME);
-                    }else {
+                    } else {
                         threadPoolDataVo.setState(ThreadPoolDataVo.DISCONNECTION);
                     }
                 }
@@ -152,7 +224,7 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
                 String[] flowItems = threadPoolFlow.split("->");
                 for (int i = 0; i < flowItems.length; i++) {
                     ProcedureVo procedureVo = new ProcedureVo();
-                    procedureVo.setTitle("流程" + (i+1));
+                    procedureVo.setTitle("流程" + (i + 1));
                     procedureVo.setDetails(flowItems[i]);
                     procedureVos.add(procedureVo);
                 }
@@ -163,7 +235,7 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
 
             threadPoolDataVoThreadxPage.setData(threadPoolDataVos);
             threadPoolDataVoThreadxPage.setTotal(threadPoolDataPage.getTotal());
-        }else {
+        } else {
             threadPoolDataVoThreadxPage.setData(new ArrayList<>());
             threadPoolDataVoThreadxPage.setTotal(0);
         }
@@ -178,21 +250,21 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
         Long instanceId = threadPoolDetailConditions.getInstanceId();
         Long threadPoolDataId = threadPoolDetailConditions.getThreadPoolDataId();
 
-        if(threadPoolDataId == null) {
-            if (instanceId== null || StrUtil.isBlank(threadPoolName)) {
+        if (threadPoolDataId == null) {
+            if (instanceId == null || StrUtil.isBlank(threadPoolName)) {
                 throw new GeneralException(CurrencyRequestEnum.PARAMETER_MISSING);
             }
         }
         ThreadPoolData threadPoolData;
-        if(threadPoolDataId != null) {
+        if (threadPoolDataId != null) {
             QueryWrapper<ThreadPoolData> threadPoolDataQueryWrapper = new QueryWrapper<>();
             threadPoolDataQueryWrapper.eq("id", threadPoolDataId);
             threadPoolData = baseMapper.selectOne(threadPoolDataQueryWrapper);
-        }else {
+        } else {
             threadPoolData = baseMapper.findByMaxIdAndThreadPoolNameAndInstanceId(threadPoolName, instanceId);
         }
 
-        if(threadPoolData == null) {
+        if (threadPoolData == null) {
             throw new GeneralException(CurrencyRequestEnum.PARAMETER_MISSING);
         }
 
@@ -241,14 +313,14 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
     @Override
     public ThreadPoolVariableParameter findThreadPoolParam(Long threadPoolDataId) {
         //参数验证
-        if(threadPoolDataId == null) {
+        if (threadPoolDataId == null) {
             throw new GeneralException(CurrencyRequestEnum.PARAMETER_MISSING);
         }
         //查询线程池
         QueryWrapper<ThreadPoolData> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("id", threadPoolDataId);
         ThreadPoolData threadPoolData = baseMapper.selectOne(queryWrapper);
-        if(threadPoolData == null) {
+        if (threadPoolData == null) {
             throw new ThreadPoolException(ThreadPoolExceptionCode.NOT_EXIST_THREAD_POOL_DATA);
         }
         ThreadPoolVariableParameter threadPoolVariableParameter = new ThreadPoolVariableParameter();
@@ -262,16 +334,16 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
 
     @Override
     public void updateThreadPoolParam(ThreadPoolVariableParameter threadPoolVariableParameter) {
-        if(threadPoolVariableParameter == null) {
+        if (threadPoolVariableParameter == null) {
             throw new GeneralException(CurrencyRequestEnum.PARAMETER_MISSING);
         }
         Long threadPoolId = threadPoolVariableParameter.getThreadPoolId();
-        if(threadPoolId == null) {
+        if (threadPoolId == null) {
             throw new GeneralException(CurrencyRequestEnum.PARAMETER_MISSING);
         }
         //查询对应的线程池
         ThreadPoolData threadPoolData = baseMapper.selectById(threadPoolId);
-        if(threadPoolData == null) {
+        if (threadPoolData == null) {
             throw new ThreadPoolException(ThreadPoolExceptionCode.NOT_EXIST_THREAD_POOL_DATA);
         }
         //初步判断线程池是否存活
@@ -285,7 +357,7 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
         //获取线程池的采集节点地址
         String address = threadPoolData.getAddress();
         //验证是否存活
-        if(!ConnectionCache.isActive(address)) {
+        if (!ConnectionCache.isActive(address)) {
             throw new ThreadPoolException(ThreadPoolExceptionCode.THREAD_POOL_DISCONNECTION);
         }
         ThreadPoolUpdateRequestMessage threadPoolUpdateRequestMessage = new ThreadPoolUpdateRequestMessage(
@@ -294,7 +366,7 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
                 threadPoolVariableParameter.getKeepAliveTime(), threadPoolVariableParameter.getRejectedExecutionHandlerClass());
         //发送修改请求
         SyncMessage syncMessage = ServerSendMessage.syncSendMessage(address, threadPoolUpdateRequestMessage);
-        if(!syncMessage.isSuccess()) {
+        if (!syncMessage.isSuccess()) {
             throw new GeneralException(syncMessage.getErrorMessage());
         }
     }
@@ -329,9 +401,9 @@ public class ThreadPoolDataServiceImpl extends ServiceImpl<ThreadPoolDataMapper,
 
         threadPoolDetailsVo.setServerName(serverKey);
         Long createTime = threadPoolData.getCreateTime();
-        if((System.currentTimeMillis() - createTime) < TimeUnit.SECONDS.toMillis(threadPoolTimeOut)) {
+        if ((System.currentTimeMillis() - createTime) < TimeUnit.SECONDS.toMillis(threadPoolTimeOut)) {
             threadPoolDetailsVo.setState("执行任务");
-        }else {
+        } else {
             threadPoolDetailsVo.setState("等待任务");
         }
         if (!instanceItemService.instanceActiveCheck(serverKey, instanceKey)) {

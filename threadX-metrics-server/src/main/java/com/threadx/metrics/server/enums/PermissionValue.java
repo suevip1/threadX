@@ -82,6 +82,11 @@ public enum PermissionValue {
      */
     UPDATE_THREAD_POOL_PARAM("update:threadPool:param", "修改线程池参数"),
 
+    /**
+     * 查询所有用户的操作日志
+     */
+    FIND_ALL_LOG("find:all:log", "查询所有用户的操作日志"),
+
     ;
     /**
      * 权限主键
