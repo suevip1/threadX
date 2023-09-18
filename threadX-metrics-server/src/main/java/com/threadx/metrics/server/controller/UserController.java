@@ -13,6 +13,13 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
 /**
  * 用户操作
  *
@@ -31,10 +38,11 @@ public class UserController {
         this.userService = userService;
     }
 
-    @Log(value = LogEnum.USER_LOGIN)
+    @Log(value = LogEnum.USER_LOGIN, paramReplace = "password=******")
     @ApiOperation(value = "用户登录")
     @PostMapping("login")
     public LoginUserVo login(@RequestBody UserLoginDto userLoginDto) {
+
         return userService.login(userLoginDto);
     }
 

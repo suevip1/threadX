@@ -2,10 +2,14 @@ package com.threadx.metrics.server.controller;
 
 import cn.hutool.json.JSONUtil;
 import com.threadx.metrics.server.common.annotations.GlobalResultPackage;
+import com.threadx.metrics.server.common.annotations.Log;
 import com.threadx.metrics.server.common.annotations.Login;
+import com.threadx.metrics.server.common.annotations.UserPermission;
 import com.threadx.metrics.server.conditions.ThreadPoolDetailConditions;
 import com.threadx.metrics.server.conditions.ThreadPoolPageDataConditions;
 import com.threadx.metrics.server.dto.ThreadPoolVariableParameter;
+import com.threadx.metrics.server.enums.LogEnum;
+import com.threadx.metrics.server.enums.PermissionValue;
 import com.threadx.metrics.server.service.ThreadPoolDataService;
 import com.threadx.metrics.server.vo.ThreadPoolDataVo;
 import com.threadx.metrics.server.vo.ThreadPoolDetailsVo;
@@ -68,6 +72,8 @@ public class ThreadPoolDataController {
     @Login
     @ApiOperation(value = "修改线程池的核心参数")
     @PostMapping("updateThreadPoolParam")
+    @UserPermission(PermissionValue.UPDATE_THREAD_POOL_PARAM)
+    @Log(value = LogEnum.UPDATE_THREAD_PARAM)
     public void updateThreadPoolParam(@RequestBody ThreadPoolVariableParameter threadPoolVariableParameter) {
         threadPoolDataService.updateThreadPoolParam(threadPoolVariableParameter);
     }

@@ -75,6 +75,13 @@ public enum PermissionValue {
      * 查询角色下的用户
      */
     FIND_ROLE_USER("find:role:users", "查询角色下的用户"),
+
+
+    /**
+     * 删除角色信息
+     */
+    UPDATE_THREAD_POOL_PARAM("update:threadPool:param", "修改线程池参数"),
+
     ;
     /**
      * 权限主键
