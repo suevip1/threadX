@@ -30,7 +30,7 @@ public interface UserRoleService {
      * @param roleId 要查询的角色的id
      * @return 用户的id
      */
-    List<Long> findUserIdUserIdByRoleId(Long roleId);
+    List<Long> findUserIdByRoleId(Long roleId);
 
     /**
      * 根据角色的id 分页查询关联信息

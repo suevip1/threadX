@@ -60,6 +60,8 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
         List<Permission> permissions = new ArrayList<>();
         if(StrUtil.isNotBlank(permissionData)) {
             permissions = JSONUtil.toList(permissionData, Permission.class);
+            //续期
+            redisTemplate.expire(permissionCacheKey, 1, TimeUnit.HOURS);
         }else {
             //查询中间表
             Set<Long> permissionIds = rolePermissionService.findByRoleIds(userData.getRoleIds());
@@ -67,11 +69,12 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
                 QueryWrapper<Permission> queryWrapper = new QueryWrapper<>();
                 queryWrapper.in("id", permissionIds);
                 permissions = baseMapper.selectList(queryWrapper);
+                if(CollUtil.isNotEmpty(permissions)) {
+                    redisTemplate.opsForValue().set(permissionCacheKey, JSONUtil.toJsonStr(permissions), 1, TimeUnit.HOURS);
+                }
             }
         }
-        if(CollUtil.isNotEmpty(permissions)) {
-            redisTemplate.opsForValue().set(permissionCacheKey, JSONUtil.toJsonStr(permissions), 1, TimeUnit.HOURS);
-        }
+
         return permissions;
     }
 
