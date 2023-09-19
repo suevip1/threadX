@@ -13,6 +13,11 @@
 
 通过使用ThreadX，我们可以减少重新发布应用的次数，降低维护成本，并提高系统的可用性和稳定性。ThreadX为我们提供了一种更加完善的解决方案，使我们能够更好地应对公司业务复杂性和规模不断增长带来的挑战。
 
+## 入门
+
+- ThreadX客户端安装配置[快速入门指南](./)
+- Thread Tms UI端安装配置[Tms安装指南](./)
+
 ## 概述
 
 随着计算机行业的飞速发展，摩尔定律逐渐失效，多核CPU成为主流。因此，使用多线程并行计算逐渐成为开发人员提升服务器性能的基本武器。线程池是一种通过“池化”思想，帮助我们管理线程而获取并发性的工具。但是，如何合理地设置线程池的参数，使其更好地利用有限的资源为系统提供服务，是每个开发人员必须掌握的基本功！
@@ -21,12 +26,44 @@ ThreadX提供了完整的线程池数据采集功能以及一组完整的UI页�
 
 ![主页面](./resources/worktable.png)
 
-提供了一组对于线程池执行的任务的详细监控
+分布式场景下，ThreadX以服务+实例作为区分，只需要简单的配置就能够清楚的查看服务内所有感兴趣的线程池，以及运行情况。
+
+![项目管理](./resources/projectManager.png)
+
+ThreadX提供了一组对于线程池执行的任务的详细监控。
 
 ![任务详情](./resources/threadPoolTask.png)
 
-提供可一组针对于线上线程池的实时参数修改
+ThreadX提供可一组针对于线上线程池的实时参数修改功能，允许开发人员在程序运行阶段动态修改线程池参数。
 
 ![任务详情](./resources/updateThreadPool.png)
 
-## 入门
+通过ThreadX可以查看整个线程池的创建流程
+
+![创建流程演示](./resources/createThreadPoolFlow.png)
+
+为了保证服务数据安全，提供了一组简要精炼的角色-用户权限管理，管理人员可以严格控制对于开发人员角色的管控。
+
+![](./resources/roleManager.png)
+
+**新增角色**
+
+![](./resources/createRole.png)
+
+**修改角色**
+
+![修改角色](./resources/updateRole.png)
+
+**新建用户**
+
+![](./resources/createUser.png)
+
+## 中文社区
+
+建设中，敬请期待！
+
+## 执照
+
+ThreadX 根据 Apache 许可证 2.0 版获得许可。请参阅[许可证](https://github.com/huangfuProject/threadX/blob/develop/LICENSE)以获取完整的许可证文本。
+
+![](./resources/license_check.png)
