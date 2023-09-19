@@ -13,6 +13,7 @@ import com.threadx.metrics.ThreadPoolExecutorData;
 import com.threadx.metrics.ThreadTaskExecutorData;
 import com.threadx.metrics.api.MetricsOutApi;
 import com.threadx.metrics.tms.config.ThreadXMetricsTmsPropertiesEnum;
+import com.threadx.metrics.tms.handler.ThreadPoolParamUpdateHandler;
 
 import java.util.Arrays;
 import java.util.List;
@@ -47,7 +48,9 @@ public class TmsMetricsOut implements MetricsOutApi {
             String[] address = remoteNodeAddress.split(":");
             String host = address[0];
             String port = address[1];
-            return new ClientConfig(host, Integer.parseInt(port), AgentContext.getServerName(), AgentContext.getInstanceName());
+            ClientConfig clientConfig = new ClientConfig(host, Integer.parseInt(port), AgentContext.getServerName(), AgentContext.getInstanceName());
+            clientConfig.addHandler("threadPoolParamUpdateHandler", new ThreadPoolParamUpdateHandler());
+            return clientConfig;
         }).collect(Collectors.toList());
         //连接服务端
         ConnectionManager.connection(clientConfigs);
@@ -58,6 +61,7 @@ public class TmsMetricsOut implements MetricsOutApi {
     public void outThreadPoolMetricsData(ThreadPoolExecutorData metricsData) {
         ThreadPoolCollectMessage threadPoolCollectMessage = new ThreadPoolCollectMessage();
         BeanUtil.copyProperties(metricsData, threadPoolCollectMessage);
+        threadPoolCollectMessage.setThreadPoolObjectId(metricsData.getObjectId());
         ConnectionManager.asyncSendMessageLoad(threadPoolCollectMessage);
     }
 

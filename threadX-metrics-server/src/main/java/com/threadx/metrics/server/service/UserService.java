@@ -5,6 +5,9 @@ import com.threadx.metrics.server.dto.UserLoginDto;
 import com.threadx.metrics.server.entity.User;
 import com.threadx.metrics.server.vo.LoginUserVo;
 
+import java.util.Collection;
+import java.util.List;
+
 /**
  * 用户服务
  *
@@ -12,6 +15,14 @@ import com.threadx.metrics.server.vo.LoginUserVo;
  * @date 2023/6/1 07:53
  */
 public interface UserService {
+
+    /**
+     * 查询用户  根据用户的id的集合
+     *
+     * @param userIds 用户的id
+     * @return 用户信息
+     */
+    List<User> findUserByIds(Collection<Long> userIds);
 
     /**
      * 用户登录

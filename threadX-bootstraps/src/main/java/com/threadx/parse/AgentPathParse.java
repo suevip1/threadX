@@ -40,15 +40,26 @@ public class AgentPathParse {
      * @return 返回目录信息
      */
     public static AgentPackageDescription parse() throws Exception {
+        //获取当前agent程序的路径信息
         Path agentPath = findAgentPath();
+        //获取当前agent所在目录
         Path agentParent = getAgentRootDir();
+        //获取libs目录   libs主要存储着第三方依赖   由应用程序类加载器加载的依赖
         Path libsDirPath = agentParent.resolve("libs");
+        //获取boot目录   boot目录主要存储需要由 BootstrapClassLoader 类加载器加载的依赖
+        // 因为双亲委派模型的原因，threadPool由BootstrapClassLoader加载.
+        // 所以直接操作修改 ThreadPoolExecutor的相关依赖需要由同级或者上级的类加载器加载
         Path bootDirPath = agentParent.resolve("boot");
+        // 获取配置信息
         Path confDirPath = agentParent.resolve("conf");
+        // 获取data目录
         Path dataDirPath = Paths.get(agentParent.toString(), "data");
+        // 获取日志目录
         Path logsDirPath = Paths.get(agentParent.toString(), "logs");
+        // 获取所有的依赖目录
         List<Path> orderLibPaths = findLibs(libsDirPath);
         List<URL> libsUrls = new ArrayList<>();
+        // 转换为uri 方便加载
         if (ThreadXCollectionUtils.isNotEmpty(orderLibPaths)) {
             for (Path orderLibPath : orderLibPaths) {
                 try {
@@ -64,6 +75,7 @@ public class AgentPathParse {
         List<File> bootLibJars = findBootLibJars();
         // 读取配置信息
         Properties envProperties = readEnvProperties(confDirPath);
+        // 将上面解析的配置信息包装为对象
         return new AgentPackageDescription(agentPath, libsDirPath, orderLibPaths, libsUrls, bootDirPath, bootLibJars, confDirPath, dataDirPath, logsDirPath, envProperties);
     }
 
@@ -127,10 +139,12 @@ public class AgentPathParse {
      * @return 插件的根目录
      */
     private static Path getAgentRootDir() {
+        //先获取当前agent的路径信息
         Path agentPath = findAgentPath();
         if (agentPath == null) {
             throw new RuntimeException("The location of threadX-bootstraps-${version}.jar is not found. Add -javaagent: the absolute path to your threadX-agent.jar on the startup command.");
         }
+        //获取当前agent的上级目录
         return agentPath.getParent();
     }
 
@@ -198,9 +212,11 @@ public class AgentPathParse {
      */
     private static Path findAgentPath() {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        //获取java运行程序中所有的运行jvm参数
         List<String> inputArguments = runtimeMxBean.getInputArguments();
         for (String inputArgument : inputArguments) {
             String formatArgument = removeJavaagent(inputArgument);
+            //寻找当前增强插件的绝对路径
             if (formatArgument.contains(JAVA_AGENT_NAME)) {
                 return Paths.get(formatArgument);
             }

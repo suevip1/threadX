@@ -115,4 +115,10 @@ public class ThreadPoolData extends BaseEntity {
      * 实例id
      */
     private Long instanceId;
+
+
+    /**
+     * 线程池对象Id
+     */
+    private String threadPoolObjectId;
 }

@@ -20,6 +20,8 @@ public class Message implements Serializable {
     private static final long serialVersionUID = -60259995547914226L;
 
 
+
+
     /**
      * 服务的名称
      */

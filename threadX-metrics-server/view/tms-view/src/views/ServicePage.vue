@@ -106,6 +106,7 @@
                         <el-table-column prop="state" label="线程池状态" align="center"/>
                         <el-table-column fixed="right" label="操作" align="center">
                             <template #default="scope">
+                                <el-button link type="primary" size="small" @click="showThreadPoolDetails(scope.row.id)">修改</el-button>
                                 <el-button link type="primary" size="small" @click="threadPoolDetailsPage(scope.row.instanceId, scope.row.threadPoolName)">详情</el-button>
                                 <el-button link type="primary" size="small" @click="viewThreadPoolCreateFlow(scope.row.createThreadPoolFlow)">流程</el-button>
                             </template>
@@ -143,192 +144,311 @@
             </div>
         </el-dialog>
 
+        <el-dialog
+            v-model="showUpdateThreadPoolParam"
+            title="修改线程池参数"
+            width="40%"
+            :before-close="emptyThreadPoolParam"
+        >
+            <el-form
+                ref="threadPoolParamFormRef"
+                :model="threadPoolParamForm"
+                :rules="threadPoolParamFormRules"
+                label-width="120px"
+                label-position="right"
+                status-icon
+            >
+                <el-form-item label="核心线程数" prop="coreSize">
+                    <el-input v-model="threadPoolParamForm.coreSize" />
+                </el-form-item>
+
+                <el-form-item label="最大线程数" prop="maximumPoolSize">
+                    <el-input v-model="threadPoolParamForm.maximumPoolSize" />
+                </el-form-item>
+
+                <el-form-item label="空闲时间(毫秒)" prop="keepAliveTime">
+                    <el-input v-model="threadPoolParamForm.keepAliveTime" />
+                </el-form-item>
+
+                <el-form-item label="拒绝策略" prop="rejectedExecutionHandlerClass">
+                    <el-input v-model="threadPoolParamForm.rejectedExecutionHandlerClass" />
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="showUpdateThreadPoolParam = false">取消修改</el-button>
+                    <el-button type="primary" @click="submitThreadPoolparam(threadPoolParamFormRef)">
+                        确认修改
+                    </el-button>
+                </span>
+            </template>
+        </el-dialog>
+
     </div>
 </template>
 
-<script lang="ts">
-import { defineComponent,ref,watch,onMounted } from 'vue'
-import { ElTree } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
-import ServerService from '../services/ServerService'
-import InstanceService from '@/services/InstanceService'
-import ThreadPoolService from '@/services/ThreadPoolService'
-import router from '@/router'
 
-export default defineComponent({
-    
-    setup () {
+<script setup lang="ts">
+    import { reactive,ref,watch,onMounted } from 'vue'
+    import type { ElTree } from 'element-plus'
+    import { Search } from '@element-plus/icons-vue'
+    import ServerService from '../services/ServerService'
+    import InstanceService from '@/services/InstanceService'
+    import ThreadPoolService from '@/services/ThreadPoolService'
+    import router from '@/router'
+    import { tr } from 'element-plus/es/locale'
+    import type { FormInstance, FormRules } from 'element-plus'
+    import { ElMessage } from 'element-plus'
 
-        onMounted(() =>{
-            loadRouterParam();
-            loadTreeData();
-        });
-        //分页容量
-        const pageSize = ref(14)
-        const totalSize = ref()
-        const currentPage = ref(1)
-        //是否显示空logo
-        const emLogo = ref(true)
-        //搜索条件
-        const threadPoolGroupNameSearch = ref()
-        //表格数据
-        const threadPoolTableData = ref([])
-        //线程池创建步骤是否显示
-        const createThreadPoolFlowVisible = ref(false)
-        //步骤长度
-        const procedureData = ref()
 
-        const instanceListeningState = ref({
-            monitoringDuration:"0毫秒",
-            threadPoolCount:0,
-            activeThreadPoolCount:0,
-            waitThreadPoolCount:0
-        })
-        // 定义树结构的数据体系
-        const serverTreeData= ref();
-        //点击的实例的id
-        const instanceId = ref()
-        // 定义标签和子标签的属性
-        const defaultProps = ref({
-            children: 'children',
-            label: 'label',
-        });
-        // 定义筛选条件值
-        const treeFilterText = ref()
-        // 定义树引用
-        const treeRef = ref<InstanceType<typeof ElTree>>()
-        // 监听搜索框  将搜索值传入引用对象中
-        watch(treeFilterText, (val) => {
-            filterTreeData()
-        })
+    interface ThreadPoolParamForm {
+        coreSize: number|null,
+        maximumPoolSize: number|null,
+        keepAliveTime: number|null,
+        rejectedExecutionHandlerClass:string
+    }
 
-        /**
-         * 对树节点进行筛选时执行的方法， 返回 false 则表示这个节点会被隐藏
-         * @param value 搜索的值
-         * @param data 当前标签
-         */
-        const filterNode = (value: string, data:any) => {
-            if (!value) return true
-            //是否包含搜索值
-            return data.label.includes(value)
+    onMounted(() =>{
+        loadRouterParam();
+        loadTreeData();
+    });
+
+
+
+    //分页容量
+    const pageSize = ref(14)
+    const totalSize = ref()
+    const currentPage = ref(1)
+    //是否显示空logo
+    const emLogo = ref(true)
+    //搜索条件
+    const threadPoolGroupNameSearch = ref()
+    //表格数据
+    const threadPoolTableData = ref([])
+    //线程池创建步骤是否显示
+    const createThreadPoolFlowVisible = ref(false)
+    //步骤长度
+    const procedureData = ref()
+
+    const threadPooltId = ref()
+    const showUpdateThreadPoolParam = ref(false)
+
+
+    const threadPoolParamFormRef = ref<FormInstance>()
+    const threadPoolParamForm = reactive<ThreadPoolParamForm>({
+        coreSize: null,
+        maximumPoolSize: null,
+        keepAliveTime: null,
+        rejectedExecutionHandlerClass:''
+    })
+
+    const threadPoolParamFormRules = reactive<FormRules>({
+        coreSize: [
+            { required: true, message: '当前线程核心数量必填', trigger: 'blur' },
+            // { type: 'number', message: '当前线程核心数量必须为数字类型' },
+        ],
+        maximumPoolSize:[
+            { required: true, message: '当前线程最大并行数量必填', trigger: 'blur' },
+            // { type: 'number', message: '当前线程最大并行数量必须为数字类型' },
+        ],
+        keepAliveTime:[
+            { required: true, message: '当前线程空闲时间（毫秒）必填', trigger: 'blur' },
+            // { type: 'number', message: '当前线程空闲时间必须为数字类型' },
+        ],
+        rejectedExecutionHandlerClass:[
+            { required: true, message: '当前线程拒绝色略全限定名必填', trigger: 'blur' }
+        ]
+    })
+
+
+    const instanceListeningState = ref({
+        monitoringDuration:"0毫秒",
+        threadPoolCount:0,
+        activeThreadPoolCount:0,
+        waitThreadPoolCount:0
+    })
+    // 定义树结构的数据体系
+    const serverTreeData= ref();
+    //点击的实例的id
+    const instanceId = ref()
+    // 定义标签和子标签的属性
+    const defaultProps = ref({
+        children: 'children',
+        label: 'label',
+    });
+    // 定义筛选条件值
+    const treeFilterText = ref()
+    // 定义树引用
+    const treeRef = ref<InstanceType<typeof ElTree>>()
+    // 监听搜索框  将搜索值传入引用对象中
+    watch(treeFilterText, (val) => {
+        filterTreeData()
+    })
+
+    /**
+     * 对树节点进行筛选时执行的方法， 返回 false 则表示这个节点会被隐藏
+     * @param value 搜索的值
+     * @param data 当前标签
+     */
+    const filterNode = (value: string, data:any) => {
+        if (!value) return true
+        //是否包含搜索值
+        return data.label.includes(value)
+    }
+
+
+    /**
+     * 当出发节点点击的时候回调的方法
+     * @param data 点击的值
+     */
+    const handleNodeClick = (data: any) => {
+        if (data.parentId != null) {
+            instanceId.value = data.id
+            loadInstanceData()
         }
+        
+    }
 
 
-        /**
-         * 当出发节点点击的时候回调的方法
-         * @param data 点击的值
-         */
-        const handleNodeClick = (data: any) => {
-            if (data.parentId != null) {
-                instanceId.value = data.id
-                loadInstanceData()
-            }
-            
-        }
-
-
-        /**
-         * 加载实例的数据
-         */
-         const loadInstanceData = async ()=>{
-            const instanceIdValue = instanceId.value
-            if (instanceIdValue == null) {
-                emLogo.value = true
-            }else {
-                emLogo.value = false
-                instanceListeningState.value = await InstanceService.instanceListeningState({
-                    instanceId:instanceIdValue
-                })
-                loadThreadPoolData()    
-            }
-        }
-
-        /**
-         * 加载线程池表格数据
-         */
-        const loadThreadPoolData =async () => {
-            const threadPoolTableDataReq = await ThreadPoolService.findPageByThreadPoolPageDataConditions({
-                instanceId: instanceId.value,
-                threadGroupName: threadPoolGroupNameSearch.value,
-                pageNumber: currentPage.value,
-                pageSize: pageSize.value
+    /**
+     * 加载实例的数据
+     */
+        const loadInstanceData = async ()=>{
+        const instanceIdValue = instanceId.value
+        if (instanceIdValue == null) {
+            emLogo.value = true
+        }else {
+            emLogo.value = false
+            instanceListeningState.value = await InstanceService.instanceListeningState({
+                instanceId:instanceIdValue
             })
-            threadPoolTableData.value = threadPoolTableDataReq.data
-            totalSize.value = threadPoolTableDataReq.total
-        }
-
-        /**
-         * 加载路由参数
-         */
-        const loadTreeData = () =>{
-            ServerService.findServerAndInstanceData().then(response =>{
-                serverTreeData.value = response
-            }).finally(() =>{
-                filterTreeData();
-                loadInstanceData();
-            })
-        }
-
-        /**
-         * 根据输入数据过滤数据
-         */
-        const filterTreeData = ()=>{
-            treeRef.value!.filter(treeFilterText.value)
-        }
-
-        /**
-         * 加载路由参数
-         */
-        const loadRouterParam = ()=>{
-            treeFilterText.value = router.currentRoute.value.query.instanceName
-            instanceId.value = router.currentRoute.value.query.instanceId
-        }
-
-        /**
-         * 跳转页面到线程池详情页面，携带线程池的id信息
-         * 
-         * @param threadPoolId 点击的线程池的id
-         */
-         const threadPoolDetailsPage = (instanceId:string, threadPoolName:string)=>{
-            router.push({
-                name:'ThreadPoolMonitor',
-                query: {
-                    instanceId:instanceId,
-                    threadPoolName:threadPoolName
-                }
-            })
-        }
-
-        const viewThreadPoolCreateFlow = (datas:any)=>{
-            procedureData.value = datas
-            createThreadPoolFlowVisible.value = true
-        }
-
-
-        return {
-            serverTreeData,
-            defaultProps,
-            treeFilterText,
-            treeRef,
-            instanceId,
-            emLogo,
-            instanceListeningState,
-            threadPoolGroupNameSearch,
-            threadPoolTableData,
-            pageSize,
-            totalSize,
-            currentPage,
-            createThreadPoolFlowVisible,
-            procedureData,
-            Search,
-            filterNode,
-            handleNodeClick,
-            threadPoolDetailsPage,
-            loadThreadPoolData,
-            viewThreadPoolCreateFlow
+            loadThreadPoolData()    
         }
     }
-})
+
+    /**
+     * 加载线程池表格数据
+     */
+    const loadThreadPoolData =async () => {
+        const threadPoolTableDataReq = await ThreadPoolService.findPageByThreadPoolPageDataConditions({
+            instanceId: instanceId.value,
+            threadGroupName: threadPoolGroupNameSearch.value,
+            pageNumber: currentPage.value,
+            pageSize: pageSize.value
+        })
+        threadPoolTableData.value = threadPoolTableDataReq.data
+        totalSize.value = threadPoolTableDataReq.total
+    }
+
+    /**
+     * 加载路由参数
+     */
+    const loadTreeData = () =>{
+        ServerService.findServerAndInstanceData().then(response =>{
+            serverTreeData.value = response
+        }).finally(() =>{
+            filterTreeData();
+            loadInstanceData();
+        })
+    }
+
+    /**
+     * 根据输入数据过滤数据
+     */
+    const filterTreeData = ()=>{
+        treeRef.value!.filter(treeFilterText.value)
+    }
+
+    /**
+     * 加载路由参数
+     */
+    const loadRouterParam = ()=>{
+        treeFilterText.value = router.currentRoute.value.query.instanceName
+        instanceId.value = router.currentRoute.value.query.instanceId
+    }
+
+    /**
+     * 跳转页面到线程池详情页面，携带线程池的id信息
+     * 
+     * @param threadPoolId 点击的线程池的id
+     */
+    const threadPoolDetailsPage = (instanceId:string, threadPoolName:string)=>{
+        router.push({
+            name:'ThreadPoolMonitor',
+            query: {
+                instanceId:instanceId,
+                threadPoolName:threadPoolName
+            }
+        })
+    }
+
+    /**
+     * 显示线程池的创建流
+     * @param datas 创建流程
+     */
+    const viewThreadPoolCreateFlow = (datas:any)=>{
+        procedureData.value = datas
+        createThreadPoolFlowVisible.value = true
+    }
+
+    /**
+     * 显示修改线程池参数的对话框
+     * @param id 线程池的id
+     */
+    const showThreadPoolDetails = (id:string) =>{
+        emptyThreadPoolParam()
+        //拉取当前的线程池的参数信息
+        ThreadPoolService.findThreadPoolParam(id).then(res =>{
+            threadPooltId.value = res.threadPoolId;
+            threadPoolParamForm.coreSize = res.coreSize;
+            threadPoolParamForm.maximumPoolSize = res.maximumPoolSize;
+            threadPoolParamForm.keepAliveTime = res.keepAliveTime;
+            threadPoolParamForm.rejectedExecutionHandlerClass = res.rejectedExecutionHandlerClass;
+            showUpdateThreadPoolParam.value = true
+        });
+    }
+
+     /**
+      * 清空线程池修改的表单
+      */
+    const emptyThreadPoolParam = () =>{
+        showUpdateThreadPoolParam.value = false
+        threadPooltId.value = "";
+        threadPoolParamForm.coreSize =  null;
+        threadPoolParamForm.maximumPoolSize = null;
+        threadPoolParamForm.keepAliveTime = null;
+        threadPoolParamForm.rejectedExecutionHandlerClass = "";
+    }
+
+    const submitThreadPoolparam = async (formEl: FormInstance | undefined) => {
+        if (!formEl) return
+        await formEl.validate((valid, fields) => {
+            if (valid) {
+                ThreadPoolService.updateThreadPoolParam({
+                    threadPoolId: threadPooltId.value,
+                    coreSize: threadPoolParamForm.coreSize,
+                    maximumPoolSize: threadPoolParamForm.maximumPoolSize,
+                    keepAliveTime: threadPoolParamForm.keepAliveTime,
+                    rejectedExecutionHandlerClass: threadPoolParamForm.rejectedExecutionHandlerClass
+                }).then(() =>{
+                    showUpdateThreadPoolParam.value = false
+                    ElMessage({
+                        message: '修改线程参数成功.',
+                        type: 'success',
+                    })
+                }).catch(error =>{
+                    ElMessage({
+                        message: '修改线程参数失败.',
+                        type: 'error',
+                    })
+                })
+                
+            } else {
+                console.log('error submit!', fields)
+            }
+        })
+    }
+
 </script>
 
 

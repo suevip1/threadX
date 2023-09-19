@@ -236,6 +236,13 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
         rolePermissionService.deleteByRoleId(roleId);
         //将映射重新入库
         rolePermissionService.batchSave(newRolePermission);
+        //查询当前角色下关联的用户
+        List<Long> userIds = userRoleService.findUserIdByRoleId(roleId);
+        //删除对应用户的权限缓存信息
+        for (Long userId : userIds) {
+            String permissionCacheKey = String.format(RedisCacheKey.USER_PERMISSION_CACHE, userId);
+            redisTemplate.delete(permissionCacheKey);
+        }
     }
 
     @Override
@@ -246,7 +253,7 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
     @Override
     public void deleteRoleById(Long roleId) {
         //查询当前角色关联的用户id
-        List<Long> userIds = userRoleService.findUserIdUserIdByRoleId(roleId);
+        List<Long> userIds = userRoleService.findUserIdByRoleId(roleId);
         //删除角色 - 菜单映射
         roleMenuService.deleteByRoleId(roleId);
         //删除角色 - 权限映射

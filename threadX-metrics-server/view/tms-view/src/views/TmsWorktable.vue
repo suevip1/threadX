@@ -156,35 +156,90 @@
         <el-card class="main-card">
             <template #header>
             <div class="card-header">
-                <span class="card-title">CPU使用率Top10</span>
-                <i class="icon iconfont  icon-shuaxin mouse-shadow server-shuaxin"></i>
+                <span class="card-title">最近修改的线程池</span>
+                <i class="icon iconfont  icon-shuaxin mouse-shadow server-shuaxin" @click="findThreadPoolUpdateLog"></i>
             </div>
             </template>
             
             <div class="card-main">
-                <div v-for="o in 4" :key="o" class="text item">{{ 'List item ' + o }}</div>
+                <el-table 
+                    :data="threadPoolUpdateDatas" 
+                    stripe 
+                    :style="`width: 100%; height: ${cardMainyHeight}px;`" 
+                    :max-height="cardMainyHeight" 
+                    row-key="id"
+                    empty-text="最近没有修改过线程池"
+                    :border="false">
+
+                    <el-table-column width="100" prop="serverName" label="服务名称" >
+                        <template #default="scope">
+                            <el-tooltip :content="scope.row.serverName" placement="top">
+                                <span class="truncate-text">{{ scope.row.serverName.length > 10 ? scope.row.serverName.substring(0, 10) + '...' : scope.row.serverName }}</span>
+                            </el-tooltip>  
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="instanceName" label="实例名称">
+                        <template #default="scope">
+                            <el-tooltip :content="scope.row.instanceName" placement="top">
+                                <span class="truncate-text">{{ scope.row.instanceName.length > 10 ? scope.row.instanceName.substring(0, 10) + '...' : scope.row.instanceName }}</span>
+                            </el-tooltip>  
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="threadPoolName" label="线程池名称">
+                        <template #default="scope">
+                            <el-tooltip :content="scope.row.threadPoolName" placement="top">
+                                <el-button
+                                link
+                                type="primary"
+                                size="small"
+                                @click.prevent="threadPoolDetailsPage(scope.row.instanceId, scope.row.threadPoolName)">
+                                    <span class="truncate-text">{{ scope.row.threadPoolName.length > 30 ? scope.row.threadPoolName.substring(0, 30) + '...' : scope.row.threadPoolName }}</span>
+                                </el-button>
+                            </el-tooltip>  
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="updateNickName" label="修改人" width="80"/>
+                    <el-table-column prop="updateDate" label="修改时间">
+                        <template #default="scope">
+                            <el-tooltip :content="scope.row.updateDate" placement="top">
+                                <span class="truncate-text">{{ scope.row.updateDate.length > 10 ? scope.row.updateDate.substring(0, 10) + '...' : scope.row.updateDate }}</span>
+                            </el-tooltip>  
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="resultMessage" label="修改结果" width="100"/>
+                    <el-table-column prop="details" label="修改详情">
+                        <template #default="scope">
+                            <el-tooltip :content="scope.row.details" placement="top">
+                                <span class="truncate-text">{{ scope.row.details.length > 10 ? scope.row.details.substring(0, 10) + '...' : scope.row.details }}</span>
+                            </el-tooltip>  
+                        </template>
+                    </el-table-column>
+                </el-table>
             </div>
         </el-card>
     </div>
 </template>
 
-<script lang="ts">
-import { defineComponent,ref,computed, onMounted, reactive } from 'vue'
-import InstanceService from '../services/InstanceService'
-import TaskService from '../services/TaskService'
-import '../assets/css/index.css'
-import { useRouter } from 'vue-router';
+<script setup lang="ts">
+    import { ref,computed, onMounted } from 'vue'
+    import InstanceService from '../services/InstanceService'
+    import TaskService from '../services/TaskService'
+    import ThreadPoolService from '../services/ThreadPoolService'
+    import '../assets/css/index.css'
+    import { useRouter } from 'vue-router';
 
-export default defineComponent({
-    setup () {
-        onMounted(() =>{
+    onMounted(() =>{
             commonlyUsedTop10()
             errorTaskThreadPoolTop()
+            findThreadPoolUpdateLog()
         });
         const router = useRouter();
 
         //当前屏幕的高度
         const windowHeight = ref(window.innerHeight);
+
+        //线程池修改数据
+        const threadPoolUpdateDatas = ref([])
         //内容的高度
         const cardMainyHeight = computed(() => {
             return (windowHeight.value - 310)/2;
@@ -251,20 +306,16 @@ export default defineComponent({
             })
         }
 
-        return {
-            instanceList,
-            errorTaskThreadPoolTopList,
-            cardMainyHeight,
-            instanceState,
-            instanceStateCheck,
-            instanceStateTagType,
-            commonlyUsedTop10,
-            errorTaskThreadPoolTop,
-            instanceDetailsPage,
-            threadPoolDetailsPage
+        /**
+         * 查询线程池的修改数据
+         */
+        const findThreadPoolUpdateLog = ()=>{
+            ThreadPoolService.findThreadPoolUpdateLog().then(res =>{
+                threadPoolUpdateDatas.value = res
+            }).catch(error =>{
+                threadPoolUpdateDatas.value = []
+            })
         }
-    }
-})
 </script>
 
 <style lang="scss" scoped>

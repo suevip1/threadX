@@ -1,5 +1,6 @@
 package com.threadx.metrics.server.aspects;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.json.JSONUtil;
 import com.threadx.metrics.server.common.annotations.Log;
 import com.threadx.metrics.server.common.context.LoginContext;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Map;
 
 /**
  * *************************************************<br/>
@@ -101,7 +103,7 @@ public class LogAspect {
             Object arg = args[i];
             Class<?> paramType = parameterTypes[i];
             // 将参数信息转换为字符串
-            String argString = paramType.getSimpleName() + ": " + paramToString(arg, paramType, paramReplaces);
+            String argString = paramType.getSimpleName() + "=>" + paramToString(arg, paramType, paramReplaces);
             paramInfo.append(argString).append("\n");
         }
         activeLog.setParamData(paramInfo.toString());
@@ -118,18 +120,19 @@ public class LogAspect {
         if (Long.class.equals(paramType) || Integer.class.equals(paramType) || Double.class.equals(paramType) || Float.class.equals(paramType) || String.class.equals(paramType) || Character.class.equals(paramType)) {
             return String.valueOf(arg);
         } else {
+            //将参数转换为map
+            Map<String, Object> stringObjectMap = BeanUtil.beanToMap(arg);
             //尝试进行参数替换
             for (String paramReplace : paramReplaces) {
                 String[] kv = paramReplace.split("=");
                 if (kv.length == 2) {
-                    String key = kv[0];
-                    String value = kv[1];
-                    paramFormat(arg, key, value);
+                    stringObjectMap.put(kv[0], kv[1]);
 
                 }
             }
+            return JSONUtil.toJsonStr(stringObjectMap);
         }
-        return JSONUtil.toJsonStr(arg);
+
     }
 
     /**

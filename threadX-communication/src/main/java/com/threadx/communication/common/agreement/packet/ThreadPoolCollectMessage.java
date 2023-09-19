@@ -90,4 +90,9 @@ public class ThreadPoolCollectMessage extends Message{
      * 线程池的创建流程
      */
     private String threadPoolFlow;
+
+    /**
+     * 线程池对象Id
+     */
+    private String threadPoolObjectId;
 }

@@ -17,7 +17,9 @@ public class AsmModifyApplicationHandler extends ModifyApplication {
 
     @Override
     public void start() throws Exception {
+        //获取上一步保存的操作器
         Instrumentation instrumentation = AgentContext.getInstrumentation();
+        //增加一个字节码变换操作
         instrumentation.addTransformer(new ModifyThreadPoolExecutorTransformer(), true);
         instrumentation.retransformClasses(ThreadPoolExecutor.class);
     }

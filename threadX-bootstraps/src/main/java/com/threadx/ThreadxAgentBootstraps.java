@@ -103,24 +103,26 @@ public class ThreadxAgentBootstraps {
                 currentThread.setContextClassLoader(classLoader);
                 Constructor<?> constructor = bootClass.getDeclaredConstructor();
                 modifyApplication = (ModifyApplication) constructor.newInstance();
-                //初始化指标收集器
+                //初始化指标收集器  spi获取 因为已经将lib目录加入到当前的类加载器  所以这里能获取到全部的
                 ServiceLoader<MetricsOutApi> metricsOutApis = ServiceLoader.load(MetricsOutApi.class, classLoader);
                 if (ThreadXCollectionUtils.isNotEmpty(metricsOutApis)) {
                     //获取 使用的指标收集器的名称
                     Properties envProperties = AgentContext.getAgentPackageDescription().getEnvProperties();
+                    //获取配置的指标收集器名称
                     String outModuleName = envProperties.getProperty(ThreadXPropertiesEnum.THREADX_METRICS_OUT_MODEL.getKey(), ThreadXPropertiesEnum.THREADX_METRICS_OUT_MODEL.getDefaultValue());
                     for (MetricsOutApi metricsOutApi : metricsOutApis) {
                         String metricsName = metricsOutApi.getMetricsName();
                         if (outModuleName.equals(metricsName)) {
+                            //初始化指标收集器
                             metricsOutApi.init();
-                            //将这个指标记录起来
+                            //将这个指标记录起来 保存起来
                             AgentContext.setMetrics(metricsOutApi);
                             break;
                         }
                     }
                 }
             } finally {
-                //恢复原始的类加载器
+                //恢复原始的类加载器  不然后续的应用程序启动会有问题
                 currentThread.setContextClassLoader(before);
             }
             //启动修改器

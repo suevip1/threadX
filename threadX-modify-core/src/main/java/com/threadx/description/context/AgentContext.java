@@ -1,5 +1,6 @@
 package com.threadx.description.context;
 
+import com.threadx.call.UpdateThreadPoolCall;
 import com.threadx.constant.ThreadXPropertiesEnum;
 import com.threadx.description.agent.AgentPackageDescription;
 import com.threadx.metrics.api.MetricsOutApi;
@@ -51,6 +52,11 @@ public class AgentContext {
      * 指标输出
      */
     private static MetricsOutApi metrics;
+
+    /**
+     * 修改的回调
+     */
+    private static UpdateThreadPoolCall updateThreadPoolCall;
 
     /**
      * 注册一个自定义的类加载器
@@ -129,5 +135,13 @@ public class AgentContext {
 
     public static String getInstanceName() {
         return instanceName;
+    }
+
+    public static UpdateThreadPoolCall getUpdateThreadPoolCall() {
+        return updateThreadPoolCall;
+    }
+
+    public static void setUpdateThreadPoolCall(UpdateThreadPoolCall updateThreadPoolCall) {
+        AgentContext.updateThreadPoolCall = updateThreadPoolCall;
     }
 }
