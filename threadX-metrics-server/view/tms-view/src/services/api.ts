@@ -10,7 +10,7 @@ import LoginCheck from '@/common/LoginCheck';
 
 class ApiUtils {
   private static axiosInstance = axios.create({
-    baseURL: 'http://127.0.0.1:8081',
+    baseURL: 'http://127.0.0.1:8081/threadX-tms',
     // 其他Axios配置，如超时时间等
     timeout: 30000,
     headers: {
