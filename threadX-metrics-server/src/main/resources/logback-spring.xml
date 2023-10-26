@@ -2,7 +2,7 @@
 <configuration>
 
     <!-- 定义日志输出位置 -->
-    <property name="LOG_FILE" value="/Users/huangfukexing/Desktop/threadX-log" />
+    <property name="LOG_FILE" value="../logs" />
 
     <!-- 定义日志级别 -->
     <root level="INFO">
